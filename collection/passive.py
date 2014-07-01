@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : passive.py
 # Creation Date : 26-06-2014
-# Last Modified : Tue 01 Jul 2014 04:12:58 PM BST
+# Last Modified : Tue 01 Jul 2014 04:22:46 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -13,6 +13,7 @@ from time import time, sleep
 INTERFACE="wlan0"
 INFO_FILE="/proc/net/dev"
 WIRELESS_FILE="/proc/net/wireless"
+OUTFILE = "passive.log"
 
 def pkts_received(lines):
   for line in lines:
@@ -53,17 +54,21 @@ def get_file_data():
   return (ts, inpt_dev_lines, inpt_wifi_lines)
 
 
-
-def main():
-  (ts_previous, inpt_dev_lines, inpt_wifi_lines) = get_file_data()
+def collect(duration = 0):
+  """ collect for the ammount of seconds you want """
+  (ts, inpt_dev_lines, inpt_wifi_lines) = get_file_data()
+  ts_finish = ts + duration
   previous = pkts_received(inpt_dev_lines)
   print "{0},\t{1},\t{2}".format("Timestamp", "RSSI", "Received")
-  while True:
+  while duration == 0 or ts < ts_finish:
     (ts, inpt_dev_lines, inpt_wifi_lines) = get_file_data()
     received = pkts_received(inpt_dev_lines) - previous
     rssi_value = rssi(inpt_wifi_lines)
     print "{0},\t{1},\t{2}".format(ts, rssi_value, received)
     sleep(1)
+
+def main():
+  collect(10)
 
 
 if __name__=="__main__":
