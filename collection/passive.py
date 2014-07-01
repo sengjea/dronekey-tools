@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : passive.py
 # Creation Date : 26-06-2014
-# Last Modified : Tue 01 Jul 2014 04:12:12 PM BST
+# Last Modified : Tue 01 Jul 2014 04:12:58 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -63,6 +63,7 @@ def main():
     received = pkts_received(inpt_dev_lines) - previous
     rssi_value = rssi(inpt_wifi_lines)
     print "{0},\t{1},\t{2}".format(ts, rssi_value, received)
+    sleep(1)
 
 
 if __name__=="__main__":
