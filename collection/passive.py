@@ -4,11 +4,12 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : passive.py
 # Creation Date : 26-06-2014
-# Last Modified : Tue 01 Jul 2014 04:22:46 PM BST
+# Last Modified : Tue 01 Jul 2014 04:24:10 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
 from time import time, sleep
+import sys
 
 INTERFACE="wlan0"
 INFO_FILE="/proc/net/dev"
@@ -68,6 +69,7 @@ def collect(duration = 0):
     sleep(1)
 
 def main():
+  sys.stdout = open(OUTFILE, "w")
   collect(10)
 
 
