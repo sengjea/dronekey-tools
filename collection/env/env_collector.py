@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Mon 07 Jul 2014 03:53:48 PM BST
+# Last Modified : Mon 07 Jul 2014 04:06:11 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -49,6 +49,12 @@ class env_collector(object):
     self.logger.addHandler(ch)
 
 
+    handler = logging.FileHandler(self.LOGFILE_NAME, "w")
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter)
+    self.logger.addHandler(handler)
+
+
     rospy.init_node('env_collector', anonymous = True)
     # Wait for the Pause service to appear, then Pause the simulator
     rospy.wait_for_service('/simulator/Pause');
@@ -79,17 +85,17 @@ class env_collector(object):
     # Wait for messages on topic, go to callback function when new messages arrive.
     rospy.spin()
 
-  %staticmethod
+  @staticmethod
   def get_logfile_name(LOGFILE_NAME):
     cnt = 1
-    QUALIFIED_LOGFILE_NAME = "{0:03}-{1}".format(LOGFILE_NAME)
+    QUALIFIED_LOGFILE_NAME = "{0:03}-{1}".format(cnt, LOGFILE_NAME)
     while os.path.isfile(QUALIFIED_LOGFILE_NAME):
       cnt += 1
-      QUALIFIED_LOGFILE_NAME = "{0:03}-{1}".format(LOGFILE_NAME)
+      QUALIFIED_LOGFILE_NAME = "{0:03}-{1}".format(cnt, LOGFILE_NAME)
     return QUALIFIED_LOGFILE_NAME
 
 
   # Create a callback function for the subscriber.
   def callback(self, data):
     # Simply print out values in our custom message.
-    self.logger.info("Quadrotor position: [%f,%f,%f]", data.x, data.y, data.z)
+    self.logger.debug("Quadrotor position: [%f,%f,%f]", data.x, data.y, data.z)
