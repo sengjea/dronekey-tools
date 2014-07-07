@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Mon 07 Jul 2014 03:33:43 PM BST
+# Last Modified : Mon 07 Jul 2014 03:53:48 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -79,6 +79,7 @@ class env_collector(object):
     # Wait for messages on topic, go to callback function when new messages arrive.
     rospy.spin()
 
+  %staticmethod
   def get_logfile_name(LOGFILE_NAME):
     cnt = 1
     QUALIFIED_LOGFILE_NAME = "{0:03}-{1}".format(LOGFILE_NAME)
