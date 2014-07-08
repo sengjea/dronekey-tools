@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Mon 07 Jul 2014 04:06:11 PM BST
+# Last Modified : Tue 08 Jul 2014 09:55:08 AM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -94,8 +94,31 @@ class env_collector(object):
       QUALIFIED_LOGFILE_NAME = "{0:03}-{1}".format(cnt, LOGFILE_NAME)
     return QUALIFIED_LOGFILE_NAME
 
+  @staticmethod
+  def env_collector_factory(NODE_ID = "UAV0"):
+    return env_collector(NODE_ID)
+
 
   # Create a callback function for the subscriber.
   def callback(self, data):
     # Simply print out values in our custom message.
-    self.logger.debug("Quadrotor position: [%f,%f,%f]", data.x, data.y, data.z)
+    self.logger.debug("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f,   \
+                        %f, %f, %f, %f, %f, %f, %f",
+                        data.t,
+                        data.x,
+                        data.y,
+                        data.z,
+                        data.roll,
+                        data.pitch,
+                        data.yaw,
+                        data.u,
+                        data.v,
+                        data.w,
+                        data.p,
+                        data.q,
+                        data.r,
+                        data.rch,
+                        data.ctrl,
+                        data.thrust,
+                        data.remaining)
+
