@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Tue 08 Jul 2014 09:55:08 AM BST
+# Last Modified : Tue 08 Jul 2014 09:59:11 AM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -102,8 +102,7 @@ class env_collector(object):
   # Create a callback function for the subscriber.
   def callback(self, data):
     # Simply print out values in our custom message.
-    self.logger.debug("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f,   \
-                        %f, %f, %f, %f, %f, %f, %f",
+    self.logger.debug("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f",
                         data.t,
                         data.x,
                         data.y,
@@ -118,7 +117,5 @@ class env_collector(object):
                         data.q,
                         data.r,
                         data.rch,
-                        data.ctrl,
-                        data.thrust,
-                        data.remaining)
+                        data.ctrl)
 
