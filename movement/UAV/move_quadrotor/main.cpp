@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	//dronkey::Navigate navigator(n);
+	dronkey::Navigate navigator(n);
 	
 	ros::spin();
 
