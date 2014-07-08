@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : passive_env.py
 # Creation Date : 07-07-2014
-# Last Modified : Tue 08 Jul 2014 09:44:48 AM BST
+# Last Modified : Tue 08 Jul 2014 09:56:38 AM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -17,7 +17,7 @@
 
 DRONES = [ "UAV0" ]
 
-import env_collector
+from env_collector import env_collector
 
 def main():
   # Initialize the node and name it.
