@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Tue 08 Jul 2014 04:14:14 PM BST
+# Last Modified : Tue 08 Jul 2014 04:15:22 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -55,7 +55,6 @@ class env_collector(object):
     self.logger.addHandler(handler)
 
     self.logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
-
 
     rospy.init_node('env_collector', anonymous = True)
     ## # Wait for the Pause service to appear, then Pause the simulator
