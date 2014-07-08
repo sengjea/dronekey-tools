@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Tue 08 Jul 2014 09:59:11 AM BST
+# Last Modified : Tue 08 Jul 2014 04:14:14 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -42,7 +42,7 @@ class env_collector(object):
     # create console handler and set level to debug
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("%(created)f: %(message)s")
+    formatter = logging.Formatter("%(created)f, %(message)s")
     ch.setFormatter(formatter)
 
     # add ch to logger
@@ -54,30 +54,32 @@ class env_collector(object):
     handler.setFormatter(formatter)
     self.logger.addHandler(handler)
 
+    self.logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
+
 
     rospy.init_node('env_collector', anonymous = True)
-    # Wait for the Pause service to appear, then Pause the simulator
-    rospy.wait_for_service('/simulator/Pause');
-    try:
-      service  = rospy.ServiceProxy('/simulator/Pause', Pause)
-      service()
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"
+    ## # Wait for the Pause service to appear, then Pause the simulator
+    ## rospy.wait_for_service('/simulator/Pause');
+    ## try:
+    ##   service  = rospy.ServiceProxy('/simulator/Pause', Pause)
+    ##   service()
+    ## except rospy.ServiceException, e:
+    ##   print "Service call failed: %s"
 
-    # Wait for the Pause service to appear, then Pause the simulator
-    rospy.wait_for_service('/simulator/Resume');
-    try:
-      service  = rospy.ServiceProxy('/simulator/Resume', Resume)
-      service()
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"
+    ## # Wait for the Pause service to appear, then Pause the simulator
+    ## rospy.wait_for_service('/simulator/Resume');
+    ## try:
+    ##   service  = rospy.ServiceProxy('/simulator/Resume', Resume)
+    ##   service()
+    ## except rospy.ServiceException, e:
+    ##   print "Service call failed: %s"
 
-    # Wait for the Pause service to appear, then Pause the simulator
-    rospy.wait_for_service('/simulator/Insert');
-    try:
-      service  = rospy.ServiceProxy('/simulator/Insert', Insert)
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"
+    ## # Wait for the Pause service to appear, then Pause the simulator
+    ## rospy.wait_for_service('/simulator/Insert');
+    ## try:
+    ##   service  = rospy.ServiceProxy('/simulator/Insert', Insert)
+    ## except rospy.ServiceException, e:
+    ##   print "Service call failed: %s"
 
     # Create a subscriber with appropriate topic, custom message and name of callback function.
     rospy.Subscriber('/hal/' + NODE_ID + '/Estimate', State, self.callback)
