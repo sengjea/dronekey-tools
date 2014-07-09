@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Tue 08 Jul 2014 04:15:22 PM BST
+# Last Modified : Wed 09 Jul 2014 10:46:10 AM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -48,7 +48,6 @@ class env_collector(object):
     # add ch to logger
     self.logger.addHandler(ch)
 
-
     handler = logging.FileHandler(self.LOGFILE_NAME, "w")
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
@@ -57,28 +56,6 @@ class env_collector(object):
     self.logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
 
     rospy.init_node('env_collector', anonymous = True)
-    ## # Wait for the Pause service to appear, then Pause the simulator
-    ## rospy.wait_for_service('/simulator/Pause');
-    ## try:
-    ##   service  = rospy.ServiceProxy('/simulator/Pause', Pause)
-    ##   service()
-    ## except rospy.ServiceException, e:
-    ##   print "Service call failed: %s"
-
-    ## # Wait for the Pause service to appear, then Pause the simulator
-    ## rospy.wait_for_service('/simulator/Resume');
-    ## try:
-    ##   service  = rospy.ServiceProxy('/simulator/Resume', Resume)
-    ##   service()
-    ## except rospy.ServiceException, e:
-    ##   print "Service call failed: %s"
-
-    ## # Wait for the Pause service to appear, then Pause the simulator
-    ## rospy.wait_for_service('/simulator/Insert');
-    ## try:
-    ##   service  = rospy.ServiceProxy('/simulator/Insert', Insert)
-    ## except rospy.ServiceException, e:
-    ##   print "Service call failed: %s"
 
     # Create a subscriber with appropriate topic, custom message and name of callback function.
     rospy.Subscriber('/hal/' + NODE_ID + '/Estimate', State, self.callback)
@@ -119,4 +96,3 @@ class env_collector(object):
                         data.r,
                         data.rch,
                         data.ctrl)
-
