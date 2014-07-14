@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : passive_iperf.py
 # Creation Date : 01-07-2014
-# Last Modified : Tue 01 Jul 2014 07:32:01 PM BST
+# Last Modified : Mon 14 Jul 2014 02:33:29 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -40,6 +40,12 @@ def timestamp():
 #      return pkts
 
 def rssi(lines):
+  """
+  Returns: floating point rssi
+
+  Takes the data from lines and performs simple text manupulation to extract
+  the rssi from it.
+  """
   for line in lines:
     words = map(lambda x: x.strip(), line.split())
     iface = words[0]
@@ -49,6 +55,14 @@ def rssi(lines):
 
 
 def get_file_data():
+  """
+  Return: String containing all the data in files
+
+  This will open the two information files defined as INFO_FILE and
+  WIRELESS_FILE.
+  It takes the timestamp before reading them.
+  Reads the data and returns them as a string.
+  """
   inpt_dev = open(INFO_FILE)
   inpt_wifi = open(WIRELESS_FILE)
   ts = timestamp()
@@ -60,7 +74,9 @@ def get_file_data():
 
 
 def collect(duration = 0):
-  """ collect for the ammount of seconds you want """
+  """
+  Collect for the ammount of seconds you want
+  """
   (ts, inpt_dev_lines, inpt_wifi_lines) = get_file_data()
   ts_finish = ts + duration
   previous = pkts_received(inpt_dev_lines)
