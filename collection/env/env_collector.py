@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Wed 09 Jul 2014 10:46:10 AM BST
+# Last Modified : Mon 14 Jul 2014 02:57:46 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -26,18 +26,43 @@ from sim.srv import *
 # Import custom messages and topics from the quadrotor HAL
 from hal_quadrotor.msg import *
 
+# Import custom messages and topics from the quadrotor HAL
+from hal_sensor_compass.msg import *
+
 # We check our logfiles
 import os.path
 
 class env_collector(object):
   def __init__(self, NODE_ID = 'UAV0'):
     self.NODE_ID = NODE_ID
-    LOGFILE_BASE_NAME = "{0}.log".format(NODE_ID)
-    self.LOGFILE_NAME = env_collector.get_logfile_name(LOGFILE_BASE_NAME)
+    LOGFILE_BASE_NAME = "{0}_estimate.log".format(NODE_ID)
+    self.LOGFILE_ESTIMATE_NAME = env_collector.get_logfile_name(LOGFILE_BASE_NAME)
+    LOGFILE_BASE_NAME = "{0}_compass.log".format(NODE_ID)
+    self.LOGFILE_COMPASS_NAME = env_collector.get_logfile_name(LOGFILE_BASE_NAME)
 
-    # create logger
-    self.logger = logging.getLogger('simple_example')
-    self.logger.setLevel(logging.DEBUG)
+    rospy.init_node('env_collector', anonymous = True)
+
+    # create estimate logger
+    self.estimate_logger = self.get_formatted_logger(self.LOGFILE_ESTIMATE_NAME)
+    self.estimate_logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
+
+
+    # create compass logger
+    self.compass_logger = self.get_formatted_logger(self.LOGFILE_COMPASS_NAME)
+    self.compass_logger.debug("DateTime, Time stamp, X, Y, Z")
+
+    # Create a subscriber with appropriate topic, custom message and name of callback function.
+    rospy.Subscriber('/hal/' + NODE_ID + '/Estimate', State, self.estimate_callback)
+
+    # Create a subscriber with appropriate topic, custom message and name of callback function.
+    rospy.Subscriber('/hal/' + NODE_ID + '/sensor/compass/Data', Data, self.compass_callback)
+
+    # Wait for messages on topic, go to callback function when new messages arrive.
+    rospy.spin()
+
+  def get_formatted_logger(self, logfile_name):
+    formatted_logger = logging.getLogger('simple_example')
+    formatted_logger.setLevel(logging.DEBUG)
 
     # create console handler and set level to debug
     ch = logging.StreamHandler()
@@ -46,22 +71,14 @@ class env_collector(object):
     ch.setFormatter(formatter)
 
     # add ch to logger
-    self.logger.addHandler(ch)
+    formatted_logger.addHandler(ch)
 
-    handler = logging.FileHandler(self.LOGFILE_NAME, "w")
+    handler = logging.FileHandler(logfile_name, "w")
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
-    self.logger.addHandler(handler)
+    formatted_logger.addHandler(handler)
+    return formatted_logger
 
-    self.logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
-
-    rospy.init_node('env_collector', anonymous = True)
-
-    # Create a subscriber with appropriate topic, custom message and name of callback function.
-    rospy.Subscriber('/hal/' + NODE_ID + '/Estimate', State, self.callback)
-
-    # Wait for messages on topic, go to callback function when new messages arrive.
-    rospy.spin()
 
   @staticmethod
   def get_logfile_name(LOGFILE_NAME):
@@ -76,11 +93,18 @@ class env_collector(object):
   def env_collector_factory(NODE_ID = "UAV0"):
     return env_collector(NODE_ID)
 
+  def compass_callback(self, data):
+    # Simply print out values in our custom message.
+    self.estimate_logger.debug("%f, %f, %f, %f",
+                        data.t,
+                        data.x,
+                        data.y,
+                        data.z)
 
   # Create a callback function for the subscriber.
-  def callback(self, data):
+  def estimate_callback(self, data):
     # Simply print out values in our custom message.
-    self.logger.debug("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f",
+    self.estimate_logger.debug("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f",
                         data.t,
                         data.x,
                         data.y,
