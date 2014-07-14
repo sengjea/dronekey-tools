@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Mon 14 Jul 2014 02:57:46 PM BST
+# Last Modified : Mon 14 Jul 2014 03:06:23 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -61,7 +61,7 @@ class env_collector(object):
     rospy.spin()
 
   def get_formatted_logger(self, logfile_name):
-    formatted_logger = logging.getLogger('simple_example')
+    formatted_logger = logging.getLogger(logfile_name)
     formatted_logger.setLevel(logging.DEBUG)
 
     # create console handler and set level to debug
