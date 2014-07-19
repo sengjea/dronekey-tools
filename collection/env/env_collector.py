@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Mon 14 Jul 2014 03:15:26 PM BST
+# Last Modified : Sun 20 Jul 2014 12:54:04 AM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -35,20 +35,21 @@ import os.path
 class env_collector(object):
   def __init__(self, NODE_ID = 'UAV0'):
     self.NODE_ID = NODE_ID
-    LOGFILE_BASE_NAME = "{0}_estimate.log".format(NODE_ID)
+    LOGFILE_BASE_NAME = "{0}-loc.log".format(NODE_ID)
     self.LOGFILE_ESTIMATE_NAME = env_collector.get_logfile_name(LOGFILE_BASE_NAME)
-    LOGFILE_BASE_NAME = "{0}_compass.log".format(NODE_ID)
+    LOGFILE_BASE_NAME = "{0}-mag.log".format(NODE_ID)
     self.LOGFILE_COMPASS_NAME = env_collector.get_logfile_name(LOGFILE_BASE_NAME)
 
 
     # create estimate logger
     self.estimate_logger = self.get_formatted_logger('estimate_logger', self.LOGFILE_ESTIMATE_NAME)
-    self.estimate_logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
+    # self.estimate_logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
+    self.estimate_logger.debug("tuxtime, embtime, X, Y, Z, roll, pitch, yaw")
 
 
     # create compass logger
     self.compass_logger = self.get_formatted_logger('compass_logger', self.LOGFILE_COMPASS_NAME)
-    self.compass_logger.debug("DateTime, Time stamp, X, Y, Z")
+    self.compass_logger.debug("tuxtime, embtime, mag_x, mag_y, mag_z")
 
     rospy.init_node('env_collector', anonymous = True)
     # Create a subscriber with appropriate topic, custom message and name of callback function.
@@ -104,19 +105,11 @@ class env_collector(object):
   # Create a callback function for the subscriber.
   def estimate_callback(self, data):
     # Simply print out values in our custom message.
-    self.estimate_logger.debug("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f",
+    self.estimate_logger.debug("%f, %f, %f, %f, %f, %f, %f",
                         data.t,
                         data.x,
                         data.y,
                         data.z,
                         data.roll,
                         data.pitch,
-                        data.yaw,
-                        data.u,
-                        data.v,
-                        data.w,
-                        data.p,
-                        data.q,
-                        data.r,
-                        data.rch,
-                        data.ctrl)
+                        data.yaw)
