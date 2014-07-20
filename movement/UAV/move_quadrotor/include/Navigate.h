@@ -6,7 +6,8 @@
 #include <hal_quadrotor/control/Waypoint.h>
 #include <hal_quadrotor/control/Hover.h>
 #include <hal_quadrotor/State.h>
-#include <Waypoint.h>
+
+#include "wpParser.h"
 
 namespace dronkey {
 	class Navigate {
@@ -14,20 +15,20 @@ namespace dronkey {
 		/**
 		 * e
 		 */
-		std::list<dronkey::Waypoint> movement;
+		std::list<hal_quadrotor::Waypoint> movement;
 
 		/**
-		 *
+		 * 
 		 */
-		std::list<dronkey::Waypoint>::iterator movement_iterator;
+		std::list<hal_quadrotor::Waypoint>::iterator movement_iterator;
 
 		/**
 		 * Hover Message
 		 */
 		hal_quadrotor::Hover req_Hover;
-
+		
 		/**
-		 *
+		 * 
 		 */
 		ros::Subscriber quadState;
 
@@ -37,7 +38,7 @@ namespace dronkey {
 		ros::ServiceClient srvHover;
 
 		/**
-		 *
+		 * 
 		 */
 		ros::ServiceClient srvWaypoint;
 
@@ -46,10 +47,10 @@ namespace dronkey {
 		 * @param msg [description]
 		 */
 		void StateCallback(const hal_quadrotor::State::ConstPtr& msg);
-
+	
 	public:
 
-		Navigate(ros::NodeHandle &n);
+		Navigate(ros::NodeHandle &n, std::string &modelName, std::string &wpPath);
 
 		~Navigate();
 	};

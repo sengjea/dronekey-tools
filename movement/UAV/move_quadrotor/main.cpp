@@ -5,11 +5,10 @@
 #include <sim/Resume.h>
 #include <sim/Pause.h>
 
-//#include <hal_sensor_transceiver/Receiver.h>
-//#include <hal_sensor_transceiver/Transmitter.h>
+#include <hal_sensor_transceiver/Receiver.h>
+#include <hal_sensor_transceiver/Transmitter.h>
 #include <hal_quadrotor/control/Takeoff.h>
 
-/*
 void ReceiverCallback(hal_sensor_transceiver::Data msg)
 {
   ROS_INFO("Quadrotor Receiver: [%f, %f]", msg.gain, msg.power);
@@ -19,11 +18,18 @@ void TransmitterCallback(hal_sensor_transceiver::TData msg)
 {
 	ROS_INFO("Quadrotor Transmitter: [%f, %f]", msg.gain, msg.power);
 }
-*/
+
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "move_quadrotor");
+	if(argc < 2){
+		ROS_FATAL("Model Name!!");
+		return 1;
+	}
+
+	std::string mName = argv[1];
+	std::string wpPath = argv[2];
+	ros::init(argc, argv, "move_quadrotor_"+mName);
 
 	ros::NodeHandle n;
 
@@ -32,8 +38,8 @@ int main(int argc, char **argv)
 	ros::ServiceClient srvPause = n.serviceClient<sim::Pause>("/simulator/Pause");
 	
 	
-	//ros::Subscriber receiverState = n.subscribe("/hal/UAV2/sensor/receiver/Data", 1000, ReceiverCallback);
-	//ros::Subscriber tranmsitterState = n.subscribe("/hal/UAV2/sensor/transmitter/Data", 1000, TransmitterCallback);
+	ros::Subscriber receiverState = n.subscribe("/hal/" + mName +"/sensor/receiver/Data", 1000, ReceiverCallback);
+	ros::Subscriber tranmsitterState = n.subscribe("/hal/" + mName +"/sensor/transmitter/Data", 1000, TransmitterCallback);
  
 	sim::Pause msgPause;
 
@@ -43,7 +49,7 @@ int main(int argc, char **argv)
 	}
 
 	sim::Insert msgInsert;
-	msgInsert.request.model_name = "UAV2";
+	msgInsert.request.model_name = mName;
 	msgInsert.request.model_type = "model://hummingbird";
 	//Insert new quadcopter
 	if(!srvInsert.call(msgInsert)){
@@ -64,13 +70,13 @@ int main(int argc, char **argv)
 	req_Takeoff.request.altitude = 4.0;
 
 	//Initialize Clients needeed!!
-	ros::ServiceClient srvTakeOff = n.serviceClient<hal_quadrotor::Takeoff>("/hal/UAV2/controller/Takeoff");
+	ros::ServiceClient srvTakeOff = n.serviceClient<hal_quadrotor::Takeoff>("/hal/" + mName +"/controller/Takeoff");
 	if(!srvTakeOff.call(req_Takeoff)){
 		ROS_FATAL("NO TAKE OFF!!");
 		return 1;
 	}
 
-	dronkey::Navigate navigator(n);
+	dronkey::Navigate navigator(n, mName, wpPath);
 	
 	ros::spin();
 
