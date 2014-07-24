@@ -4,14 +4,14 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Wed 23 Jul 2014 02:50:36 PM BST
+# Last Modified : Thu 24 Jul 2014 11:02:16 AM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
 from socket import socket, AF_INET, SOCK_DGRAM
-import threading
 from time import sleep
-import struct
+from scapy.all import *
+from scapy_ex import scapy_ex
 
 mantra = [ '\x92', '\xc1', '\x53', '\xd2', '\x88', '\x57', '\x6e', '\xaf', '\x79', '\x4f', '\xc4', '\xf2', '\xcb', '\xe6', '\x84', '\x22',
     '\xcc', '\x33', '\xe3', '\xf2', '\x41', '\x24', '\x48', '\xe2', '\xaa', '\xd2', '\x0b', '\x6c', '\xbe', '\x58', '\x5f', '\x5f',
@@ -26,12 +26,11 @@ mantra_large = mantra * 12
 
 address = ('192.168.0.41', 15000)
 
-class UDPSender(threading.Thread):
+class UDPSender(object):
   def __init__(self, target = address):
     self.packet = ''.join(mantra_large)
     self.address = tuple(target)
     self.sock = socket(AF_INET, SOCK_DGRAM)
-    threading.Thread.__init__(self)
 
   def run(self):
     while True:
@@ -39,21 +38,49 @@ class UDPSender(threading.Thread):
       print "Yo, I sent the bloody thing", sent
       sleep(0.25)
 
-class UDPReceiver(threading.Thread):
+class UDPReceiver(object):
   def __init__(self, target = address):
     self.packet = ''.join(mantra_large)
     self.address = tuple(target)
     self.sock = socket(AF_INET, SOCK_DGRAM)
     self.sock.bind(self.address)
-    threading.Thread.__init__(self)
+
+  def popcorn(self, data):
+    cnt = 0
+    for i,j in zip(data, self.packet):
+      if i != j:
+        cnt += sum(map(int, bin(ord(j) ^ ord(j))[2:]))
+    return cnt
+
+  def capture(self):
+      data, address = self.sock.recvfrom(4096)
+      return data
 
   def run(self):
     while True:
-      data, address = self.sock.recvfrom(4096)
-      print 'received %s bytes from %s' % (len(data), address)
-      for i,j in zip(data, self.packet):
-        if i != j:
-          print 'bang'
+      data = self.capture()
+      print 'received with {0} out of {1}'.format(self.popcorn(data), 8*len(data))
+
+class UDPScapyReceiver(UDPReceiver):
+  def __init__(self, target = address, iface = 'mon0'):
+    self.packet = ''.join(mantra_large)
+    self.address = tuple(target)
+    self.iface = iface
+    self.filter = "udp and dst " + target[0]
+
+  def handle(self, packet):
+    packet.show()
+    data = packet.payload
+    print 'received with {0} out of {1}'.format(self.popcorn(data), 8*len(data))
+
+  def capture(self):
+    pass
+
+  def run(self):
+    while True:
+      sniff(prn=self.handle, iface=self.iface, filter=self.filter, count=1)
+
+
 
 
 def main():
