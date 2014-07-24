@@ -54,8 +54,26 @@ class env_collector(object):
     handler.setFormatter(formatter)
     self.logger.addHandler(handler)
 
-    self.logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
-
+    """
+    tuxtime - Time on the Fit2PC running this python
+    embtime - time on the embedded system giving this data
+    x - x position, +x is east
+    y - y position, +y is north
+    z - z position, +z is up
+    roll - deg/rads about the x axis
+    pitch - deg/rads about the y axis
+    yaw - deg/rads about the z axis
+    v_x - velocity along the x axis
+    v_y - velocity along the y axis
+    v_z - velocity along the z axis
+    v_roll - deg/rads about the x axis
+    v_pitch - deg/rads about the y axis
+    v_yaw - deg/rads about the z axis
+    reached - has the goal been reached
+    ctype - current controller type 
+    """
+    
+    self.logger.debug("tuxtime,embtime,x,y,z,roll,pitch,yaw,v_x,v_y,v_z,v_roll,v_pitch,v_yaw,reached,ctype")
     rospy.init_node('env_collector', anonymous = True)
     ## # Wait for the Pause service to appear, then Pause the simulator
     ## rospy.wait_for_service('/simulator/Pause');
