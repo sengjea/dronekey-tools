@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Thu 24 Jul 2014 11:02:16 AM BST
+# Last Modified : Fri 25 Jul 2014 11:09:12 AM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -78,7 +78,7 @@ class UDPScapyReceiver(UDPReceiver):
 
   def run(self):
     while True:
-      sniff(prn=self.handle, iface=self.iface, filter=self.filter, count=1)
+      sniff(prn=self.handle, iface=self.iface, filter=str(self.filter), count=1)
 
 
 
