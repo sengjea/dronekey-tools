@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Fri 25 Jul 2014 11:09:12 AM BST
+# Last Modified : Fri 25 Jul 2014 12:32:58 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -66,12 +66,14 @@ class UDPScapyReceiver(UDPReceiver):
     self.packet = ''.join(mantra_large)
     self.address = tuple(target)
     self.iface = iface
-    self.filter = "udp and dst " + target[0]
+    self.filter = "udp and ip dst " + target[0] + "and not ip src " + target[0]
 
-  def handle(self, packet):
-    packet.show()
-    data = packet.payload
-    print 'received with {0} out of {1}'.format(self.popcorn(data), 8*len(data))
+  def handle(self, pkt):
+    if pkt.haslayer(Dot11) and pkt.type == 2 and pkt.haslayer(UDP):
+      udp=pkt.getlayer(UDP)
+      print udp.payload
+      data = udp.payload
+      print 'received with {0} out of {1}'.format(self.popcorn(data), 8*len(data))
 
   def capture(self):
     pass
