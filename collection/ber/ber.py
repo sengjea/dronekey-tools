@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Sat 26 Jul 2014 02:08:58 PM BST
+# Last Modified : Sat 26 Jul 2014 02:13:05 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -55,10 +55,9 @@ class UDPReceiver(object):
     self.sock.bind(self.address)
 
   def popcorn(self, data):
-    print self.packet
-    print data
     cnt = 0
-    for i,j in zip(data, self.packet):
+    _to_test = self.packet[:len(data)]
+    for i,j in zip(data, _to_test):
       if i != j:
         cnt += sum(map(int, bin(ord(i) ^ ord(j))[2:]))
     return cnt
