@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Sat 26 Jul 2014 02:28:35 PM BST
+# Last Modified : Sat 26 Jul 2014 02:36:59 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -88,7 +88,7 @@ class UDPScapyReceiver(UDPReceiver):
       ip = pkt.getlayer(IP)
       udp=pkt.getlayer(UDP)
       # With the proper IP address and UDP port
-      if ip.dst == self.address[0] and udp.dport == self.address[1]:
+      if ip.dst == self.address[0] and udp.dport == self.address[1] and pkt.haslayer(Raw):
         # Radiotap/802.11/802.11 QoS/LLC/SNAP/IP/UDP
         data = pkt[Raw].load
         if len(data) >= MIN_PACKET_SIZE:
