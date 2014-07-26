@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Sat 26 Jul 2014 02:13:05 PM BST
+# Last Modified : Sat 26 Jul 2014 02:25:42 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -89,19 +89,20 @@ class UDPScapyReceiver(UDPReceiver):
       udp=pkt.getlayer(UDP)
       # With the proper IP address and UDP port
       if ip.dst == self.address[0] and udp.dport == self.address[1]:
-	# Radiotap/802.11/802.11 QoS/LLC/SNAP/IP/UDP
-        data = repr(pkt.payload.payload.payload.payload.payload.payload.payload)
-        flips = self.popcorn(data)
-	self.received += 1
-        if flips > 0:
-          self.error += 1
+  # Radiotap/802.11/802.11 QoS/LLC/SNAP/IP/UDP
+        data = pkt[Raw].load
+  if len(data) >= MIN_PACKET_SIZE:
+          flips = self.popcorn(data)
+    self.received += 1
+          if flips > 0:
+            self.error += 1
 
-	_tuxtime = ttime()
-	_rssi =  pkt[RadioTap].dBm_AntSignal
-	_ber = float(flips) / 8*len(data)
-	_prr = float(self.received) / (self.error + self.received)
+    _tuxtime = ttime()
+    _rssi =  pkt[RadioTap].dBm_AntSignal
+    _ber = float(flips) / (8*len(data))
+    _prr = float(self.received) / (self.error + self.received)
 
-	print '{0}, {1}, {2}, {3}'.format(_tuxtime, _rssi, _ber, _prr)
+    print '{0}, {1}, {2}, {3}'.format(_tuxtime, _rssi, _ber, _prr)
 
   def capture(self):
     pass
