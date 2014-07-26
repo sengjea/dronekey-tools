@@ -4,12 +4,14 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Fri 25 Jul 2014 12:32:58 PM BST
+# Last Modified : Sat 26 Jul 2014 01:52:43 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
-from socket import socket, AF_INET, SOCK_DGRAM
+from socket import AF_INET, SOCK_DGRAM
+from socket import socket as ssocket
 from time import sleep
+from time import time as ttime
 from scapy.all import *
 from scapy_ex import scapy_ex
 
@@ -30,7 +32,7 @@ class UDPSender(object):
   def __init__(self, target = address):
     self.packet = ''.join(mantra_large)
     self.address = tuple(target)
-    self.sock = socket(AF_INET, SOCK_DGRAM)
+    self.sock = ssocket(AF_INET, SOCK_DGRAM)
 
   def run(self):
     while True:
@@ -42,14 +44,16 @@ class UDPReceiver(object):
   def __init__(self, target = address):
     self.packet = ''.join(mantra_large)
     self.address = tuple(target)
-    self.sock = socket(AF_INET, SOCK_DGRAM)
+    self.sock = ssocket(AF_INET, SOCK_DGRAM)
     self.sock.bind(self.address)
 
   def popcorn(self, data):
+    print self.packet
+    print data
     cnt = 0
     for i,j in zip(data, self.packet):
       if i != j:
-        cnt += sum(map(int, bin(ord(j) ^ ord(j))[2:]))
+        cnt += sum(map(int, bin(ord(i) ^ ord(j))[2:]))
     return cnt
 
   def capture(self):
@@ -64,23 +68,40 @@ class UDPReceiver(object):
 class UDPScapyReceiver(UDPReceiver):
   def __init__(self, target = address, iface = 'mon0'):
     self.packet = ''.join(mantra_large)
+    self.received = 0
+    self.error = 0
     self.address = tuple(target)
     self.iface = iface
-    self.filter = "udp and ip dst " + target[0] + "and not ip src " + target[0]
+    #self.filter = '(not tcp) and (ip dst {0}) and (udp port {1})'.format(*target)
+    self.filter = 'not tcp'
+    print 'tuxtime, rssi, ber, prr'
 
   def handle(self, pkt):
-    if pkt.haslayer(Dot11) and pkt.type == 2 and pkt.haslayer(UDP):
+    # Data udp packets only
+    if pkt.haslayer(RadioTap) and pkt.haslayer(Dot11) and pkt.type == 2 and pkt.haslayer(UDP):
+      ip = pkt.getlayer(IP)
       udp=pkt.getlayer(UDP)
-      print udp.payload
-      data = udp.payload
-      print 'received with {0} out of {1}'.format(self.popcorn(data), 8*len(data))
+      # With the proper IP address and UDP port
+      if ip.dst == self.address[0] and udp.dport == self.address[1]:
+	# Radiotap/802.11/802.11 QoS/LLC/SNAP/IP/UDP
+        data = repr(pkt.payload.payload.payload.payload.payload.payload.payload)
+        flips = self.popcorn(data)
+	self.received += 1
+        if flips > 0:
+          self.error += 1
+
+	_tuxtime = ttime()
+	_rssi =  pkt[RadioTap].dBm_AntSignal
+	_ber = float(flips) / 8*len(data)
+	_prr = float(self.received) / (self.error + self.received)
+
+	print '{0}, {1}, {2}, {3}'.format(_tuxtime, _rssi, _ber, _prr)
 
   def capture(self):
     pass
 
   def run(self):
-    while True:
-      sniff(prn=self.handle, iface=self.iface, filter=str(self.filter), count=1)
+    sniff(prn=self.handle, iface=self.iface, filter=str(self.filter))
 
 
 

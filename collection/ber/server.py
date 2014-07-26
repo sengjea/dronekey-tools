@@ -11,7 +11,7 @@
 import ber
 
 def main():
-  server = ber.UDPScapyReceiver(('localhost', 15000))
+  server = ber.UDPScapyReceiver(('192.168.0.41', 15000))
   server.run()
 
 if __name__=="__main__":
