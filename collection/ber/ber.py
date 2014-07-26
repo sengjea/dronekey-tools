@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : ber.py
 # Creation Date : 21-07-2014
-# Last Modified : Sat 26 Jul 2014 01:52:43 PM BST
+# Last Modified : Sat 26 Jul 2014 02:08:58 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -14,6 +14,7 @@ from time import sleep
 from time import time as ttime
 from scapy.all import *
 from scapy_ex import scapy_ex
+from random import randint
 
 mantra = [ '\x92', '\xc1', '\x53', '\xd2', '\x88', '\x57', '\x6e', '\xaf', '\x79', '\x4f', '\xc4', '\xf2', '\xcb', '\xe6', '\x84', '\x22',
     '\xcc', '\x33', '\xe3', '\xf2', '\x41', '\x24', '\x48', '\xe2', '\xaa', '\xd2', '\x0b', '\x6c', '\xbe', '\x58', '\x5f', '\x5f',
@@ -24,7 +25,9 @@ mantra = [ '\x92', '\xc1', '\x53', '\xd2', '\x88', '\x57', '\x6e', '\xaf', '\x79
     '\x5e', '\x0f', '\x90', '\xa2', '\x12', '\xc9', '\x9f', '\xc4', '\x9e', '\x4c', '\x05', '\xe8', '\x67', '\x62', '\x6e', '\x22',
     '\x01', '\x4a', '\x4f', '\xe2', '\x2b', '\x89', '\x84', '\x5d', '\x68', '\x33', '\x9f', '\xb9', '\x18', '\x12', '\xcc', '\xeb' ]
 
-mantra_large = mantra * 12
+mantra_large = mantra * 11
+
+MIN_PACKET_SIZE = 8
 
 address = ('192.168.0.41', 15000)
 
@@ -35,9 +38,13 @@ class UDPSender(object):
     self.sock = ssocket(AF_INET, SOCK_DGRAM)
 
   def run(self):
+    cnt = 0
     while True:
-      sent = self.sock.sendto(self.packet, self.address)
-      print "Yo, I sent the bloody thing", sent
+      # Pick a random size from 8 to 1408 bytes (just below the MTU size)
+      _to_send = self.packet[:randint(MIN_PACKET_SIZE, len(mantra_large))]
+      cnt += 1
+      self.sock.sendto(_to_send, self.address)
+      print 'I sent {0} packets'.format(cnt)
       sleep(0.25)
 
 class UDPReceiver(object):
