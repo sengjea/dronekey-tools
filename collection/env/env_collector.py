@@ -4,7 +4,7 @@
 #* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 # File Name : env_collector.py
 # Creation Date : 07-07-2014
-# Last Modified : Sun 20 Jul 2014 12:54:04 AM BST
+# Last Modified : Mon 28 Jul 2014 04:39:49 PM BST
 # Created By : Greg Lyras <greglyras@gmail.com>
 #_._._._._._._._._._._._._._._._._._._._._.*/
 
@@ -44,7 +44,24 @@ class env_collector(object):
     # create estimate logger
     self.estimate_logger = self.get_formatted_logger('estimate_logger', self.LOGFILE_ESTIMATE_NAME)
     # self.estimate_logger.debug("DateTime, Time stamp, X position (X == +East), Y position (Y == +North), Z position (Z == +Up), roll (anti-clockwise about X), pitch (anti-clockwise about Y), yaw (anti-clockwise about Z), X velocity, Y velocity, Z velocity, roll angular velocity, pitch angular velocity, yaw angular velocity, has goal been reached, current controllertype")
-    self.estimate_logger.debug("tuxtime, embtime, X, Y, Z, roll, pitch, yaw")
+    self.estimate_logger.debug("tuxtime,embtime,x,y,z,roll,pitch,yaw,v_x,v_y,v_z,v_roll,v_pitch,v_yaw,reached,ctype")
+
+    # tuxtime - Time on the Fit2PC running this python
+    # embtime - time on the embedded system giving this data
+    # x - x position, +x is east
+    # y - y position, +y is north
+    # z - z position, +z is up
+    # roll - deg/rads about the x axis
+    # pitch - deg/rads about the y axis
+    # yaw - deg/rads about the z axis
+    # v_x - velocity along the x axis
+    # v_y - velocity along the y axis
+    # v_z - velocity along the z axis
+    # v_roll - deg/rads about the x axis
+    # v_pitch - deg/rads about the y axis
+    # v_yaw - deg/rads about the z axis
+    # reached - has the goal been reached
+    # ctype - current controller type
 
 
     # create compass logger
@@ -105,11 +122,19 @@ class env_collector(object):
   # Create a callback function for the subscriber.
   def estimate_callback(self, data):
     # Simply print out values in our custom message.
-    self.estimate_logger.debug("%f, %f, %f, %f, %f, %f, %f",
-                        data.t,
-                        data.x,
-                        data.y,
-                        data.z,
-                        data.roll,
-                        data.pitch,
-                        data.yaw)
+    self.estimate_logger.debug("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f",
+        data.t,
+        data.x,
+        data.y,
+        data.z,
+        data.roll,
+        data.pitch,
+        data.yaw,
+        data.u,
+        data.v,
+        data.w,
+        data.p,
+        data.q,
+        data.r,
+        data.rch,
+        data.ctrl)
