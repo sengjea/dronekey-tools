@@ -69,7 +69,7 @@ def parse_rinex_time(string):
   return int(t);    
 
 def get_obs_times(filename):
-  f_obs = open(filename, "r");
+  f_obs = open(filename, "r")
   
   for line in f_obs:
     if "END OF HEADER" in line:
@@ -112,26 +112,26 @@ if __name__ == "__main__":
   
   rtkpost.append("{0}.obs".format(base_file))
   #rtkpost.append("{0}.nav".format(base_file))
-  #gps_t = gps_time(times[0]) 
-  #d = download_file("ftp://www.ordnancesurvey.co.uk/gps/rinex/{Y}/{day_of_year}/".format(**gps_t),
-  #                  "stra{day_of_year}{hour_code}".format(**gps_t), "14o", 0)
-  #
-  #if (d not in rtkpost): 
-  #  rtkpost.append(d) 
+  gps_t = gps_time(times[0]) 
+  d = download_file("ftp://www.ordnancesurvey.co.uk/gps/rinex/{Y}/{day_of_year}/".format(**gps_t),
+                    "stra{day_of_year}{hour_code}".format(**gps_t), "14o", 0)
+  
+  if (d not in rtkpost): 
+    rtkpost.append(d) 
    
   for t in range(times[0],times[1],60*60):
     gps_t = gps_time(t) 
-    ppp_baseurl = "ftp://cddis.gsfc.nasa.gov/gps/products/{gps_week}/".format(**gps_t)
+   # ppp_baseurl = "ftp://cddis.gsfc.nasa.gov/gps/products/{gps_week}/".format(**gps_t)
   
-    for ext in ["sp3", "clk", "erp" ]:
-      #d = download_file("ftp://cddis.gsfc.nasa.gov/gps/products/{gps_week}/".format(**gps_t),
-      #                  "igu{gps_week}{day_of_week}_{hour_quad:02d}".format(**gps_t), ext, 1) 
-      #if (d not in rtkpost): 
-      #  rtkpost.append(d) 
-      d = download_file("ftp://cddis.gsfc.nasa.gov/gps/products/{gps_week}/".format(**gps_t),
-                          "igr{gps_week}{day_of_week}".format(**gps_t), ext, 1) 
-      if (d not in rtkpost): 
-        rtkpost.append(d) 
+   # for ext in ["sp3", "clk", "erp" ]:
+   #   #d = download_file("ftp://cddis.gsfc.nasa.gov/gps/products/{gps_week}/".format(**gps_t),
+   #   #                  "igu{gps_week}{day_of_week}_{hour_quad:02d}".format(**gps_t), ext, 1) 
+   #   #if (d not in rtkpost): 
+   #   #  rtkpost.append(d) 
+   #   d = download_file("ftp://cddis.gsfc.nasa.gov/gps/products/{gps_week}/".format(**gps_t),
+   #                       "igr{gps_week}{day_of_week}".format(**gps_t), ext, 1) 
+   #   if (d not in rtkpost): 
+   #     rtkpost.append(d) 
     
     d = download_file("ftp://cddis.gsfc.nasa.gov/gps/data/daily/{Y}/{day_of_year}/{y}n/".format(**gps_t),
                         "brdc{day_of_year}0".format(**gps_t), "14n", 1)
