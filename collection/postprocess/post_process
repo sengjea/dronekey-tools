@@ -116,7 +116,7 @@ if __name__ == "__main__":
   d = download_file("ftp://www.ordnancesurvey.co.uk/gps/rinex/{Y}/{day_of_year}/".format(**gps_t),
                     "stra{day_of_year}{hour_code}".format(**gps_t), "14o", 0)
   
-  if (d not in rtkpost): 
+  if (d and d not in rtkpost): 
     rtkpost.append(d) 
    
   for t in range(times[0],times[1],60*60):
