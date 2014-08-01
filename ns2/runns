@@ -1,0 +1,4 @@
+#!/bin/bash
+
+mkfifo poll.tcl
+ns simple.tcl
