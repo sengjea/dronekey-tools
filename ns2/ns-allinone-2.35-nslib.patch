@@ -1,0 +1,18 @@
+--- SOURCES/ns-allinone-2.35/ns-2.35/tcl/lib/ns-lib.tcl	2010-05-09 18:28:41.000000000 -0400
++++ BUILD/ns-allinone-2.35/ns-2.35/tcl/lib/ns-lib.tcl	2014-08-01 13:03:01.585464809 -0400
+@@ -1020,10 +1020,15 @@
+ 	$self instvar scheduler_
+ 	#puts "time: [clock format [clock seconds] -format %X]"
+ 	$scheduler_ halt
+ }
+ 
++Simulator instproc resume {} {
++	$self instvar scheduler_
++	$scheduler_ resume
++}
++
+ Simulator instproc dumpq {} {
+ 	$self instvar scheduler_
+ 	$scheduler_ dumpq
+ }
+ 
