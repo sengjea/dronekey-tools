@@ -1,0 +1,29 @@
+--- SOURCES/ns-allinone-2.35/ns-2.35/mobile/tworayground.cc	2010-03-08 00:54:52.000000000 -0500
++++ BUILD/ns-allinone-2.35/ns-2.35/mobile/tworayground.cc	2014-08-03 15:39:11.225305880 -0400
+@@ -44,10 +44,11 @@
+ #include <antenna.h>
+ #include <mobilenode.h>
+ #include <propagation.h>
+ #include <wireless-phy.h>
+ #include <tworayground.h>
++#define DEBUG 4
+ 
+ static class TwoRayGroundClass: public TclClass {
+ public:
+         TwoRayGroundClass() : TclClass("Propagation/TwoRayGround") {}
+         TclObject* create(int, const char*const*) {
+@@ -145,12 +146,12 @@
+ 					 r->getLambda());
+ 
+ #if DEBUG > 3
+   printf("TRG %.9f %d(%d,%d)@%d(%d,%d) d=%f xo=%f :",
+ 	 Scheduler::instance().clock(), 
+-	 t->getNode()->index(), (int)tX, (int)tY,
+-	 r->getNode()->index(), (int)rX, (int)rY,
++	 t->getNode()->address(), (int)tX, (int)tY,
++	 r->getNode()->address(), (int)rX, (int)rY,
+ 	 d, crossover_dist);
+   //  printf("\n\t Pt %e Gt %e Gr %e lambda %e L %e :",
+   //         t->getTxPr(), Gt, Gr, lambda, L);
+ #endif
+ 
