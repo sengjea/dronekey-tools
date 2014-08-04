@@ -44,8 +44,8 @@ def gpsFromUTC(t, leapSecs=14):
     gpsSOD = (gpsSOW % secsInDay) 
     return (gpsWeek, gpsSOW, gpsDay, gpsSOD)
 
-def check_files(filebase):
-  return (os.path.isfile("conf.cfg") and 
+def check_files(filebase, scriptdir):
+  return (os.path.isfile(scriptdir+"conf.cfg") and 
   #    not os.path.isfile("{0}.pos".format(filebase)) and 
       os.path.isfile("{0}.nav".format(filebase)) and
       os.path.isfile("{0}.obs".format(filebase)))
@@ -103,7 +103,7 @@ if __name__ == "__main__":
   subprocess.check_call([scriptdir+"verifier", file_arg, "{0}.nvs".format(base_file) ])
   subprocess.check_call([rtkdir +"convbin", "-r", "nvs", "{0}.nvs".format(base_file)])
 
-  if not check_files(base_file):
+  if not check_files(base_file, scriptdir):
     print("Die! You need .obs, .nav and conf.cfg\r\n")
     sys.exit(1)
   
