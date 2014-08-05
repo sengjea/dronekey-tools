@@ -1,6 +1,12 @@
 #!/usr/bin/python
 import sys
 
+def parse_32(bytes_, signed):
+    val =  bytes_[0] + (bytes_[1] << 8) + (bytes_[2] << 16)\
+           + ((bytes_[3] & (0x7F if signed else 0xFF)) << 24)\
+           - ((1 << 32) if (signed and bytes_[3] & 0x80) else 0)
+    return val
+
 def parse_16(bytes_, signed):
     return bytes_[0] + ((bytes_[1] & (0x7F if signed else 0xFF)) << 8)\
            - ((1 << 16) if (signed and bytes_[1] & 0x80) else 0)
@@ -34,9 +40,6 @@ if __name__ == "__main__":
   start_index = 0 
   _buffer = [] 
   prev_is_dle = False 
-  tick_iteration = 0
-  tick = 0
-  last_tick = 0
   while 1:
     _input = f_sync.read(1024) 
     if not _input:
@@ -50,13 +53,9 @@ if __name__ == "__main__":
     while len(_buffer) > 45:  
       if (_buffer[0] == 0x10 and _buffer[1] == 0x72 and 
           _buffer[36] == 0x10 and _buffer[37] == 0x03):
-        tick = parse_16(_buffer[42:46], 0) 
-        if (last_tick > tick):
-          tick_iteration += 1
         f_osync.write("{0},{1},{2},{3}\r\n".format(parse_fp80(_buffer[2:12]),parse_16(_buffer[12:14], 1),
-        parse_16(_buffer[38:42], 0), tick + (tick_iteration << 16)))
-        last_tick = tick
-        _buffer = _buffer[46:] 
+        parse_32(_buffer[38:42], 0), parse_32(_buffer[42:46], 0)))
+        _buffer = _buffer[46:]
       else: 
         _buffer.pop(0)
   f_sync.close()
