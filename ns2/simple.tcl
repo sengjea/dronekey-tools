@@ -32,12 +32,19 @@ Phy/WirelessPhy set RXThresh_ 8.54570e-07
 Antenna/OmniAntenna set Z_ 0.0
 
 #Set PHY layer attributes
+#According to MC1322x data sheet, set_power(0x11) = 2mW
+Phy/WirelessPhy set Pt_ 2
+
+#Experiment used Channel 15 (2425MHz)
+Phy/WirelessPhy set lambda_ 0.1236257
+Phy/WirelessPhy set L_ 51000
 puts "Phy/WirelessPhy Pt_ = [ Phy/WirelessPhy set Pt_ ]"
+puts "Phy/WirelessPhy lambda_ = [ Phy/WirelessPhy set lambda_ ]"
 puts "Phy/WirelessPhy L_ = [ Phy/WirelessPhy set L_ ]"
 
 #Set Propagation Model attributes
-Propagation/Shadowing set dist0_ 1
-Propagation/Shadowing set pathlossExp_ 5
+Propagation/Shadowing set dist0_ 1.8964
+Propagation/Shadowing set pathlossExp_ 5  
 Propagation/Shadowing seed predef 42
 
 # set up topography object

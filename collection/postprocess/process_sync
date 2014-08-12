@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys
+import sys, time, math
 
 def parse_32(bytes_, signed):
     val =  bytes_[0] + (bytes_[1] << 8) + (bytes_[2] << 16)\
@@ -53,8 +53,12 @@ if __name__ == "__main__":
     while len(_buffer) > 45:  
       if (_buffer[0] == 0x10 and _buffer[1] == 0x72 and 
           _buffer[36] == 0x10 and _buffer[37] == 0x03):
-        f_osync.write("{0},{1},{2},{3}\r\n".format(parse_fp80(_buffer[2:12]),parse_16(_buffer[12:14], 1),
-        parse_32(_buffer[38:42], 0), parse_32(_buffer[42:46], 0)))
+        msecs_of_week = parse_fp80(_buffer[2:12])/float(1000.0)
+        gps_week = parse_16(_buffer[12:14], 1)
+        if (gps_week > 0): 
+          f_osync.write("{0}, {1}, {2}\r\n".format(msecs_of_week, gps_week,
+                      #parse_32(_buffer[38:42], 0), 
+                      parse_32(_buffer[42:46], 0)))
         _buffer = _buffer[46:]
       else: 
         _buffer.pop(0)
