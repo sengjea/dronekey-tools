@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, time, math
+import sys, time, math, gpstime
 
 def parse_32(bytes_, signed):
     val =  bytes_[0] + (bytes_[1] << 8) + (bytes_[2] << 16)\
@@ -11,6 +11,28 @@ def parse_16(bytes_, signed):
     return bytes_[0] + ((bytes_[1] & (0x7F if signed else 0xFF)) << 8)\
            - ((1 << 16) if (signed and bytes_[1] & 0x80) else 0)
 
+def parse_fp64(bytes_):
+  if len(bytes_) < 8:
+    return float('NaN')
+  else:
+    M = 0 
+    for i,b in enumerate(bytes_[0:6]):
+      M += b << i*8
+    M += (bytes_[6] & 0x0F) << 48 
+    e = ((bytes_[6] & 0xF0) >> 4) + ((bytes_[7] & 0x7F) << 4)
+    s = 1 if (bytes_[7] & 0x80) else 0 
+  print "{0} {1} {2}".format(M,e,s) 
+  if e > 0 and e < 2047:
+    return float((-1)**s*float(1 << (e-1023))*(1+float(M)/(1 << 52)))
+  elif e == 0 and not M == 0:
+    return float((-1)**s*float(1 << (-1022))*(1+float(M)/(1 << 52)))
+  elif e == 0 and M == 0:
+    return 0
+  elif e == 32767 and M == 0:
+    return float('inf') if s == 0 else float('-inf')
+  else:
+    return float('NaN')
+
 def parse_fp80(bytes_):
   if len(bytes_) < 10:
     return float('NaN')
@@ -19,13 +41,13 @@ def parse_fp80(bytes_):
     for i,b in enumerate(bytes_[0:7]):
       M += b << i*8
     M += (bytes_[7] & 0x7F) << 56
-    i = 1 if (bytes_[7] & 0x80) else 0 
+    #i = 1 if (bytes_[7] & 0x80) else 0 
     e = bytes_[8] + ((bytes_[9] & 0x7F) << 8)
     s = 1 if (bytes_[9] & 0x80) else 0 
   if e > 0 and e < 32767:
     return float((-1)**s*float(1 << (e-16383))*(1+float(M)/(1 << 63)))
   elif e == 0 and not M == 0:
-    return float((-1)**s*float(1 << (e-16382))*(1+float(M)/(1 << 63)))
+    return float((-1)**s*float(1 << (-16382))*(1+float(M)/(1 << 63)))
   elif e == 0 and M == 0:
     return 0
   elif e == 32767 and M == 0:
@@ -35,11 +57,14 @@ def parse_fp80(bytes_):
 
 if __name__ == "__main__":
   file_arg = sys.argv[1]
-  f_sync = open(file_arg, "r")
-  f_osync = open((file_arg.split(".")[0])+".csv", "w")
+  f_sync = open(sys.argv[1], "r")
+  f_osync = open(sys.argv[2], "w")
+  has_secs = True if len(sys.argv) > 3 else False 
   start_index = 0 
   _buffer = [] 
   prev_is_dle = False 
+  f_osync.write("gps_sow, gps_week, timestamp\r\n")
+  prev_ts = 0 
   while 1:
     _input = f_sync.read(1024) 
     if not _input:
@@ -53,14 +78,26 @@ if __name__ == "__main__":
     while len(_buffer) > 45:  
       if (_buffer[0] == 0x10 and _buffer[1] == 0x72 and 
           _buffer[36] == 0x10 and _buffer[37] == 0x03):
-        msecs_of_week = parse_fp80(_buffer[2:12])/float(1000.0)
+        gps_sow = parse_fp80(_buffer[2:12])/float(1000.0)
+        if int(_buffer[14]) == 3:
+          deviation = parse_16(_buffer[31:33],0) 
+          gps_sow += deviation 
+        #parse_fp64(_buffer[23:31])
         gps_week = parse_16(_buffer[12:14], 1)
+        timestamp = 0 
+        if has_secs:
+          timestamp = parse_32(_buffer[42:46], 0)
+          _buffer = _buffer[46:]
+        else:
+          timestamp = parse_32(_buffer[38:42], 0)
+          _buffer = _buffer[43:]
         if (gps_week > 0): 
-          f_osync.write("{0}, {1}, {2}\r\n".format(msecs_of_week, gps_week,
-                      #parse_32(_buffer[38:42], 0), 
-                      parse_32(_buffer[42:46], 0)))
-        _buffer = _buffer[46:]
+          f_osync.write("{0}, {1}, {2}\r\n".format(gps_sow, gps_week, timestamp))
+        if (timestamp < prev_ts):
+          print "Timestamp reset detected! Please check and clean csv file"
+        prev_ts = timestamp
       else: 
+        print "error" 
         _buffer.pop(0)
   f_sync.close()
   f_osync.close()

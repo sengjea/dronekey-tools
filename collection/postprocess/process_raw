@@ -1,49 +1,6 @@
 #!/usr/bin/python
 import sys, os, subprocess
-import urllib, time, datetime, math
-
-secsInWeek = 604800
-secsInDay = 86400
-gpsEpoch = (1980, 1, 6, 0, 0, 0)  # (year, month, day, hh, mm, ss)
-leapSecs = 16 #UTC to GPS timestamp diff
-
-def gpsFromUTC(t):
-    """converts UTC to: gpsWeek, secsOfWeek, gpsDay, secsOfDay
-
-    a good reference is:  http://www.oc.nps.navy.mil/~jclynch/timsys.html
-
-    This is based on the following facts (see reference above):
-
-    GPS time is basically measured in (atomic) seconds since 
-    January 6, 1980, 00:00:00.0  (the GPS Epoch)
-    
-    The GPS week starts on Saturday midnight (Sunday morning), and runs
-    for 604800 seconds. 
-
-    Currently, GPS time is 13 seconds ahead of UTC (see above reference).
-    While GPS SVs transmit this difference and the date when another leap
-    second takes effect, the use of leap seconds cannot be predicted.  This
-    routine is precise until the next leap second is introduced and has to be
-    updated after that.  
-
-    SOW = Seconds of Week
-    SOD = Seconds of Day
-
-    Note:  Python represents time in integer seconds, fractions are lost!!!
-    """
-    secFract = t % 1 
-    epochTuple = gpsEpoch + (-1, -1, 0)
-    t0 = time.mktime(epochTuple)
-    # Note: time.mktime strictly works in localtime and to yield UTC, it should be
-    #       corrected with time.timezone
-    #       However, since we use the difference, this correction is unnecessary.
-    # Warning:  trouble if daylight savings flag is set to -1 or 1 !!!
-    tdiff = t - t0
-    gpsSOW = (tdiff % secsInWeek)
-    gpsWeek = int(math.floor(tdiff/secsInWeek)) 
-    gpsDay = int(math.floor(gpsSOW/secsInDay))
-    gpsSOD = (gpsSOW % secsInDay)
-    return (gpsWeek, gpsSOW, gpsDay, gpsSOD)
+import urllib, time, datetime, math, gpstime
 
 def check_files(filebase, scriptdir):
   return (os.path.isfile(scriptdir+"conf.cfg") and 
@@ -52,7 +9,7 @@ def check_files(filebase, scriptdir):
       os.path.isfile("{0}.obs".format(filebase)))
 
 def gps_time(t):
-  gps_time = gpsFromUTC(t)
+  gps_time = gpstime.gps_from_utc(t)
   t_struct = time.gmtime(t)
   return { "gps_week": gps_time[0], "day_of_week":gps_time[2],
         "hour_code": chr(ord('a') + t_struct.tm_hour),
@@ -62,18 +19,6 @@ def gps_time(t):
         "day_quarter": (t_struct.tm_hour/6)*6,
         "hour_quarter": (t_struct.tm_min/15)*15 }
 
-def parse_rinex_time(string):
-  st = string.split()
-  t = time.mktime((int(st[0]), int(st[1]), int(st[2]),
-      int(st[3]), int(st[4]), math.trunc(float(st[5])),
-      -1, -1, 0)) - time.timezone - leapSecs
-  return t 
-
-def parse_pos_time(string):
-  t = time.strptime(string+" UTC", "%Y/%m/%d %H:%M:%S.%f %Z")
-  dt = datetime.datetime.strptime(string+" UTC", "%Y/%m/%d %H:%M:%S.%f %Z")
-  return gpsFromUTC(time.mktime(t) + dt.microsecond/1e6)
-
 def get_obs_times(filename):
   f_obs = open(filename, "r")
   
@@ -81,28 +26,27 @@ def get_obs_times(filename):
     if "END OF HEADER" in line:
       break
     elif 'TIME OF FIRST OBS' in line:
-      tofo = parse_rinex_time(line[:45])
+      tofo = int(gpstime.utc_from_rinex_string(line[:45]))
     elif 'TIME OF LAST OBS' in line:
-      tolo = parse_rinex_time(line[:45])
+      tolo = int(gpstime.utc_from_rinex_string(line[:45]))
 
   f_obs.close() 
   return [ tofo, tolo ] 
 
-def process_pos(filename):
-  f_pos = open(filename, "r")
-  f_pos_t = open(filename+".tmp", "w")
-  f_pos_t.write("gps_sow, lat, long, height\n")
-  for line in f_pos:
+def process_pos(filename, ofilename):
+  infile = open(filename, "r")
+  outfile = open(ofilename, "w")
+  outfile.write("gps_sow, latitude, longitude, height\n")
+  
+  for line in infile:
     line_list = line.split(",")
     if line[0] != '%' and float(line_list[6]) < 0.5: 
-      gps_t = parse_pos_time(line_list[0])
+      gps_t = gpstime.gps_from_string(line_list[0], "%Y/%m/%d %H:%M:%S.%f")
       line_list.insert(1, str(gps_t[1])) 
-      f_pos_t.write(",".join(line_list[1:5])+"\n")
+      outfile.write(",".join(line_list[1:5])+"\n")
    
-  os.remove(filename)
-  os.rename(filename+".tmp", filename)
-  f_pos_t.close()
-  f_pos.close()
+  outfile.close()
+  infile.close()
 
 def download_file(baseurl, filebase, extension, compression):
    
@@ -119,10 +63,12 @@ def download_file(baseurl, filebase, extension, compression):
   return "{0}.{1}".format(filebase,extension)
 
 if __name__ == "__main__":
+  scriptdir = "/home/sengjea/codes/dronekey-tools/collection/postprocess/" 
   rtkdir = "/home/sengjea/codes/rtklib/bin/"
+  process_basestation = False
   os.environ['PATH'] = ':'.join([os.getenv('PATH'), rtkdir])
-  scriptdir = "/home/sengjea/Desktop/data/" 
   file_arg = sys.argv[1]
+  ofile_arg = sys.argv[2]
   base_file = file_arg.split(".")[0]
   base_file = file_arg.split(".")[0]
   subprocess.check_call([scriptdir+"verifier", file_arg, "{0}.nvs".format(base_file)])
@@ -134,10 +80,11 @@ if __name__ == "__main__":
   
   times = get_obs_times("{0}.obs".format(base_file));
   
-  if 1: 
+  if not process_basestation: 
     rtkpost = [ rtkdir + "rnx2rtkp", "-k", scriptdir+"conf.cfg" ]
     rtkpost.append("{0}.obs".format(base_file))
-    rtkpost.append("../gnss_base_station/base_station.obs".format(base_file))
+    #TODO: Fix absolute path 
+    rtkpost.append("gnss_base_station/base_station.obs".format(base_file))
   else: 
     rtkpost = [ rtkdir + "rnx2rtkp", "-k", scriptdir+"conf-bs.cfg" ]
     rtkpost.append("{0}.obs".format(base_file))
@@ -159,4 +106,4 @@ if __name__ == "__main__":
   rtkpost += ["-o", "{0}.pos".format(base_file)]
   subprocess.check_call(rtkpost)
   subprocess.check_call([rtkdir+"pos2kml", "{0}.pos".format(base_file)])
-  process_pos("{0}.pos".format(base_file))
+  process_pos("{0}.pos".format(base_file), ofile_arg)
