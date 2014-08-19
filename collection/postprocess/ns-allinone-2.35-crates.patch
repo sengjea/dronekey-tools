@@ -1,0 +1,214 @@
+--- SOURCES/ns-allinone-2.35/ns-2.35/apps/udp.cc	2005-08-26 01:05:28.000000000 -0400
++++ BUILD/ns-allinone-2.35/ns-2.35/apps/udp.cc	2014-08-14 19:56:18.231630444 -0400
+@@ -137,14 +137,16 @@
+ 		//
+ 		// Agent/Udp instproc recv {from data} {puts data}
+ 
+ 		PacketData* data = (PacketData*)pkt->userdata();
+ 
+-		hdr_ip* iph = hdr_ip::access(pkt);
++		hdr_cmn* h = hdr_cmn::access(pkt);
++    //hdr_ip* iph = hdr_ip::access(pkt);
+                 Tcl& tcl = Tcl::instance();
+ 		tcl.evalf("%s process_data %d {%s}", name(),
+-		          iph->src_.addr_ >> Address::instance().NodeShift_[1],
++		          h->uid_, 
++              //iph->src_.addr_ >> Address::instance().NodeShift_[1],
+ 			  data->data());
+ 	}
+ 	Packet::free(pkt);
+ }
+ 
+--- SOURCES/ns-allinone-2.35/ns-2.35/tcl/lib/ns-lib.tcl	2010-05-09 18:28:41.000000000 -0400
++++ BUILD/ns-allinone-2.35/ns-2.35/tcl/lib/ns-lib.tcl	2014-08-01 13:03:01.585464809 -0400
+@@ -1020,10 +1020,15 @@
+ 	$self instvar scheduler_
+ 	#puts "time: [clock format [clock seconds] -format %X]"
+ 	$scheduler_ halt
+ }
+ 
++Simulator instproc resume {} {
++	$self instvar scheduler_
++	$scheduler_ resume
++}
++
+ Simulator instproc dumpq {} {
+ 	$self instvar scheduler_
+ 	$scheduler_ dumpq
+ }
+ 
+--- SOURCES/ns-allinone-2.35/ns-2.35/tcl/lib/ns-mobilenode.tcl	2009-01-15 01:23:49.000000000 -0500
++++ BUILD/ns-allinone-2.35/ns-2.35/tcl/lib/ns-mobilenode.tcl	2014-08-13 15:24:53.859988339 -0400
+@@ -648,10 +648,16 @@
+ 	# ============================================================
+ 
+ 	$self addif $netif
+ }
+ 
++# set modulation
++Node/MobileNode instproc modulation { val } {
++	$self instvar netif_
++	$netif_(0) modulation $val 
++}
++
+ # set transmission power
+ Node/MobileNode instproc setPt { val } {
+ 	$self instvar netif_
+ 	$netif_(0) setTxPower $val
+ }
+diff -rNU5 SOURCES/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.cc BUILD/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.cc
+--- SOURCES/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.cc	1969-12-31 19:00:00.000000000 -0500
++++ BUILD/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.cc	2014-08-15 07:13:13.619349117 -0400
+@@ -0,0 +1,66 @@
++
++/* -*-	Mode:C++; c-basic-offset:8; tab-width:8; indent-tabs-mode:t -*- */
++/* Ported from O_QPSK */
++
++#include <math.h>
++#include <stdlib.h>
++#include <random.h>
++#include <modulation.h>
++
++/* ======================================================================
++   Offset - Quadrature Phase Shift Keying 
++   ====================================================================== */
++O_QPSK::O_QPSK()
++{
++	Rs = 0;
++}
++
++O_QPSK::O_QPSK(int S)
++{
++	Rs = S;
++}
++
++int
++O_QPSK::BitError(double Pr)
++{
++	double Pe;			// probability of error
++	double x;
++	int nbit = 0;			// number of bit errors tolerated
++
++	if(nbit == 0) {
++		Pe = ProbBitError(Pr);
++	}
++	else {
++		Pe = ProbBitError(Pr, nbit);
++	}
++
++	// quick check
++	if(Pe == 0.0)
++		return 0;		// no bit errors
++
++	// scale the error probabilty
++	Pe *= 1e3;
++
++	x = (double)(((int)Random::uniform()) % 1000);
++
++	if(x < Pe)
++		return 1;		// bit error
++	else
++		return 0;		// no bit errors
++}
++
++double
++O_QPSK::ProbBitError(double)
++{
++	double Pe = 0.0;
++
++	return Pe;
++}
++
++double
++O_QPSK::ProbBitError(double, int)
++{
++	double Pe = 0.0;
++
++	return Pe;
++}
+diff -rNU5 SOURCES/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.h BUILD/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.h
+--- SOURCES/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.h	1969-12-31 19:00:00.000000000 -0500
++++ BUILD/ns-allinone-2.35/ns-2.35/mobile/o-qpsk.h	2014-08-15 07:13:12.502339216 -0400
+@@ -0,0 +1,20 @@
++#ifndef __o_qpsk_h__
++#define __o_qpsk_h__
++
++class O_QPSK : public Modulation {
++
++public:
++	O_QPSK(void);
++	O_QPSK(int);
++
++	virtual ~O_QPSK () {}
++
++	virtual int BitError(double Pr);
++
++private:
++	virtual double ProbBitError(double Pr);
++	virtual double ProbBitError(double Pr, int n);
++};
++
++#endif /* __o_qpsk_h__ */
++
+--- SOURCES/ns-allinone-2.35/ns-2.35/makefile.vc	2010-05-09 18:28:41.000000000 -0400
++++ BUILD/ns-allinone-2.35/ns-2.35/makefile.vc	2014-08-15 07:15:03.651375032 -0400
+@@ -240,11 +240,11 @@
+ 	mobile/antenna.o mobile/omni-antenna.o \
+ 	mobile/shadowing.o mobile/shadowing-vis.o mobile/dumb-agent.o \
+ 	common/bi-connector.o common/node.o \
+ 	common/mobilenode.o \
+ 	mac/arp.o mobile/god.o mobile/dem.o \
+-	mobile/topography.o mobile/modulation.o \
++	mobile/topography.o mobile/modulation.o mobile/o-qpsk.o\
+ 	queue/priqueue.o queue/dsr-priqueue.o \
+ 	mac/phy.o mac/wired-phy.o mac/wireless-phy.o \
+ 	mac/mac-timers.o trace/cmu-trace.o mac/varp.o \
+ 	mac/mac-simple.o \
+ 	satellite/sat-hdlc.o \
+--- SOURCES/ns-allinone-2.35/ns-2.35/Makefile.in	2011-10-23 12:29:54.000000000 -0400
++++ BUILD/ns-allinone-2.35/ns-2.35/Makefile.in	2014-08-15 07:13:44.684624557 -0400
+@@ -253,11 +253,11 @@
+ 	mobile/antenna.o mobile/omni-antenna.o \
+ 	mobile/shadowing.o mobile/shadowing-vis.o mobile/dumb-agent.o \
+ 	common/bi-connector.o common/node.o \
+ 	common/mobilenode.o \
+ 	mac/arp.o mobile/god.o mobile/dem.o \
+-	mobile/topography.o mobile/modulation.o \
++	mobile/topography.o mobile/modulation.o mobile/o-qpsk.o\
+ 	queue/priqueue.o queue/dsr-priqueue.o \
+ 	mac/phy.o mac/wired-phy.o mac/wireless-phy.o \
+ 	mac/wireless-phyExt.o \
+ 	mac/mac-timers.o trace/cmu-trace.o mac/varp.o \
+ 	mac/mac-simple.o \
+--- SOURCES/ns-allinone-2.35/ns-2.35/mac/wireless-phy.cc	2007-09-04 00:32:18.000000000 -0400
++++ BUILD/ns-allinone-2.35/ns-2.35/mac/wireless-phy.cc	2014-08-15 15:03:43.922337393 -0400
+@@ -186,10 +186,14 @@
+ 			return TCL_ERROR;
+ 		}else if (strcmp(argv[1], "propagation") == 0) {
+ 			assert(propagation_ == 0);
+ 			propagation_ = (Propagation*) obj;
+ 			return TCL_OK;
++		}else if (strcmp(argv[1], "modulation") == 0) {
++			assert(modulation_ == 0);
++			modulation_ = (Modulation*) obj;
++			return TCL_OK;
+ 		} else if (strcasecmp(argv[1], "antenna") == 0) {
+ 			ant_ = (Antenna*) obj;
+ 			return TCL_OK;
+ 		} else if (strcasecmp(argv[1], "node") == 0) {
+ 			assert(node_ == 0);
+@@ -374,10 +378,14 @@
+ 	 * it can properly do Collision Avoidance / Detection.
+ 	 */
+ 	pkt_recvd = 1;
+ 
+ DONE:
++			printf("SM %f.9 _%d_ from %d Pr %e RXThresh %e\n",
++			       Scheduler::instance().clock(), node()->index(),
++			       p->txinfo_.getNode()->index(),
++			       Pr,RXThresh);
+ 	p->txinfo_.getAntenna()->release();
+ 
+ 	/* WILD HACK: The following two variables are a wild hack.
+ 	   They will go away in the next release...
+ 	   They're used by the mac-802_11 object to determine
