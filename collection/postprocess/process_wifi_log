@@ -1,21 +1,6 @@
 #!/usr/bin/python
 
-import sys, time, datetime, math
-secsInWeek = 604800
-secsInDay = 86400
-gpsEpoch = (1980, 1, 6, 0, 0, 0)  # (year, month, day, hh, mm, ss)
-leapSecs = 16 #UTC to GPS timestamp diff
-
-def gpsFromUTC(t):
-    secFract = t % 1 
-    epochTuple = gpsEpoch + (-1, -1, 0)
-    t0 = time.mktime(epochTuple)
-    tdiff = t - t0 + leapSecs
-    gpsSOW = (tdiff % secsInWeek)
-    gpsWeek = int(math.floor(tdiff/secsInWeek)) 
-    gpsDay = int(math.floor(gpsSOW/secsInDay))
-    gpsSOD = (gpsSOW % secsInDay)
-    return (gpsWeek, gpsSOW, gpsDay, gpsSOD)
+import sys, time, datetime, math, gpstime
 
 if __name__ == "__main__":
   file_arg = sys.argv[1]
@@ -26,6 +11,6 @@ if __name__ == "__main__":
   outfile.write("{0}, {1}".format("gps_sow", ",".join(header[1:])))
   for line in input_lines[1:]:
     data = line.split(",")
-    gps_sow = gpsFromUTC(float(data[0]) + time.timezone)[1]
+    gps_sow = gpstime.gps_from_utc(float(data[0]))[1]
     #ts = time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(float(data[0]))); 
     outfile.write("{0}, {1}".format(gps_sow, ",".join(data[1:])))
