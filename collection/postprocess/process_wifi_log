@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import sys, time, datetime, math, gpstime
+
+if __name__ == "__main__":
+  file_arg = sys.argv[1]
+  infile = open(file_arg, "r")
+  outfile = open(sys.argv[2], "w")
+  input_lines = infile.readlines()
+  header = input_lines[0].split(",")
+  outfile.write("{0}, {1}".format("gps_sow", ",".join(header[1:])))
+  for line in input_lines[1:]:
+    data = line.split(",")
+    gps_sow = gpstime.gps_from_utc(float(data[0]))[1]
+    #ts = time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(float(data[0]))); 
+    outfile.write("{0}, {1}".format(gps_sow, ",".join(data[1:])))

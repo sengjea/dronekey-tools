@@ -1,0 +1,109 @@
+#!/usr/bin/python
+import sys, os, subprocess
+import urllib, time, datetime, math, gpstime
+
+def check_files(filebase, scriptdir):
+  return (os.path.isfile(scriptdir+"conf.cfg") and 
+  #    not os.path.isfile("{0}.pos".format(filebase)) and 
+      os.path.isfile("{0}.nav".format(filebase)) and
+      os.path.isfile("{0}.obs".format(filebase)))
+
+def gps_time(t):
+  gps_time = gpstime.gps_from_utc(t)
+  t_struct = time.gmtime(t)
+  return { "gps_week": gps_time[0], "day_of_week":gps_time[2],
+        "hour_code": chr(ord('a') + t_struct.tm_hour),
+        "day_of_year": t_struct.tm_yday,
+        "Y": time.strftime("%Y",t_struct),
+        "y": time.strftime("%y",t_struct),
+        "day_quarter": (t_struct.tm_hour/6)*6,
+        "hour_quarter": (t_struct.tm_min/15)*15 }
+
+def get_obs_times(filename):
+  f_obs = open(filename, "r")
+  
+  for line in f_obs:
+    if "END OF HEADER" in line:
+      break
+    elif 'TIME OF FIRST OBS' in line:
+      tofo = int(gpstime.utc_from_rinex_string(line[:45]))
+    elif 'TIME OF LAST OBS' in line:
+      tolo = int(gpstime.utc_from_rinex_string(line[:45]))
+
+  f_obs.close() 
+  return [ tofo, tolo ] 
+
+def process_pos(filename, ofilename):
+  infile = open(filename, "r")
+  outfile = open(ofilename, "w")
+  outfile.write("gps_sow, latitude, longitude, height\n")
+  
+  for line in infile:
+    line_list = line.split(",")
+    if line[0] != '%' and float(line_list[6]) < 0.5: 
+      gps_t = gpstime.gps_from_string(line_list[0], "%Y/%m/%d %H:%M:%S.%f")
+      line_list.insert(1, str(gps_t[1])) 
+      outfile.write(",".join(line_list[1:5])+"\n")
+   
+  outfile.close()
+  infile.close()
+
+def download_file(baseurl, filebase, extension, compression):
+   
+  if (os.path.isfile("{0}.{1}".format(filebase,extension))):
+    return "{0}.{1}".format(filebase,extension)
+  try:   
+    subprocess.check_call(["wget",
+    baseurl + filebase + "." + extension + (".Z" if compression else "")])
+    if (compression):
+        subprocess.check_call(["uncompress", filebase + "." + extension + ".Z"])
+  except: 
+    return ""
+  
+  return "{0}.{1}".format(filebase,extension)
+
+if __name__ == "__main__":
+  scriptdir = "/home/sengjea/codes/dronekey-tools/collection/postprocess/" 
+  rtkdir = "/home/sengjea/codes/rtklib/bin/"
+  process_basestation = False
+  os.environ['PATH'] = ':'.join([os.getenv('PATH'), rtkdir])
+  file_arg = sys.argv[1]
+  ofile_arg = sys.argv[2]
+  base_file = file_arg.split(".")[0]
+  base_file = file_arg.split(".")[0]
+  subprocess.check_call([scriptdir+"verifier", file_arg, "{0}.nvs".format(base_file)])
+  subprocess.check_call([rtkdir +"convbin", "-r", "nvs", "{0}.nvs".format(base_file)])
+
+  if not check_files(base_file, scriptdir):
+    print("Die! You need .obs, .nav and conf.cfg\r\n")
+    sys.exit(1)
+  
+  times = get_obs_times("{0}.obs".format(base_file));
+  
+  if not process_basestation: 
+    rtkpost = [ rtkdir + "rnx2rtkp", "-k", scriptdir+"conf.cfg" ]
+    rtkpost.append("{0}.obs".format(base_file))
+    #TODO: Fix absolute path 
+    rtkpost.append("gnss_base_station/base_station.obs".format(base_file))
+  else: 
+    rtkpost = [ rtkdir + "rnx2rtkp", "-k", scriptdir+"conf-bs.cfg" ]
+    rtkpost.append("{0}.obs".format(base_file))
+    for t in range(times[0],times[1],15*60):
+      gps_t = gps_time(t)
+      d = download_file("ftp://igs.ign.fr/pub/igs/data/highrate/{Y}/{day_of_year}/".format(**gps_t),
+          "hert{day_of_year}{hour_code}{hour_quarter:02d}".format(**gps_t),"{y}d".format(**gps_t), 1) 
+      #d = download_file("ftp://igs.ign.fr/pub/igs/data/hourly/{Y}/{day_of_year}/".format(**gps_t),
+      #    "hert{day_of_year}{hour_code}".format(**gps_t),"{y}d".format(**gps_t), 1) 
+      if (d and d not in rtkpost): 
+        rtkpost.append(d) 
+    
+  gps_t = gps_time(times[0]) 
+  nav_file = download_file("ftp://cddis.gsfc.nasa.gov/gps/data/daily/{Y}/{day_of_year}/{y}n/".format(**gps_t),
+                      "brdc{day_of_year}0".format(**gps_t), "14n", 1)
+  if (nav_file and nav_file not in rtkpost): 
+    rtkpost.append(nav_file) 
+
+  rtkpost += ["-o", "{0}.pos".format(base_file)]
+  subprocess.check_call(rtkpost)
+  subprocess.check_call([rtkdir+"pos2kml", "{0}.pos".format(base_file)])
+  process_pos("{0}.pos".format(base_file), ofile_arg)
