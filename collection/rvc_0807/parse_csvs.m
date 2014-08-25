@@ -1,8 +1,8 @@
-clear all; close all; clc
+clear all; close all; clc;
 %% Script Options
 
-receiver_rssi_file = 'wifi.csv';
-%transmitter_rssi_file = 'xmit_ber.csv';
+receiver_rssi_file = 'recv_ber.csv';
+transmitter_rssi_file = 'xmit_ber.csv';
 
 receiver_sync_file = 'recv_new_sync.csv';
 trasmitter_sync_file = 'xmit_new_sync.csv';
@@ -10,26 +10,31 @@ trasmitter_sync_file = 'xmit_new_sync.csv';
 receiver_positions_file = 'recv_new_pos.csv';
 transmitter_positions_file = 'xmit_new_pos.csv';
 
-rssi2dbm_func = @(x) x; % x/3 - 100;
+rssi2dbm_func = @(x) x/3 - 100;
 rssi_ewma_factor = 3/8; % 0 if no ewma desired
 
-log_file = 1; % or fopen("log_file.txt", "a");
+log_file = fopen('matlab.tcl','w');
 plot_rssi_vs_time = 1;
-plot_position_vs_time = 0;
 plot_distance_vs_rssi = 1;
 plot_stamp_sync = 0;
-prr_modelling = exist('transmitter_rssi_file', 'var');
-sow_start = 391750;
-sow_end = 392650;
 
-Pt_ = 10.^(4/10); %4dBm tranmission power assumed.
+sow_start = 392750;
+sow_end = 392950;
+
+tx_pwr_dbm = 3;
+rxthresh_dbm = -87;
+csthresh_dbm = -100;
+
 freq_ = (2425 * 10^6); %Frequency for Channel 15
-rxthresh_ = 10.^(-84/10); %-84dBm rx threshold assumed.
-csthresh_ = 10.^(-100/10); %-100dBm cs threshold assumed.
+
+lag = 0;
 
 slice_width =  3;
-time_delta = 0.02;
+time_delta = 0.2;
+run_ns2 = 1;
 %% Load Transmitter Positions Table
+
+prr_modelling = exist('transmitter_rssi_file', 'var');
 if prr_modelling
     xmit_pkt = readtable(transmitter_rssi_file);
 end
@@ -69,14 +74,14 @@ end
 recv_pkt.dbm = rssi2dbm_func(recv_pkt.rssi);
 
 %% Grand Table
-lag = 223;
+
 grand_table = array2table([recv_pkt.gps_sow + lag, ...
     interp1(recv_pos.gps_sow, recv_pos{:, { 'x', 'y', 'z', 'height' } }, recv_pkt.gps_sow + lag), ...
     interp1(xmit_pos.gps_sow, xmit_pos{:, { 'x', 'y', 'z', 'height' } }, recv_pkt.gps_sow + lag), ...
     recv_pkt.dbm
     ],...
     'VariableNames',{ 'gps_sow' 'rx' 'ry' 'rz' 'rh' 'tx' 'ty' 'tz' 'th' 'dbm'});
-disp(lag);
+
 grand_table.distance = sqrt((grand_table.tx - grand_table.rx).^2 + ...
     (grand_table.ty - grand_table.ry).^2 + ...
     (grand_table.tz - grand_table.rz).^2 ...
@@ -86,7 +91,7 @@ grand_table.angle = abs(grand_table.rh - grand_table.th)./grand_table.distance;
 grand_table.h2 = grand_table.rh.^2 .* grand_table.th.^2;
 
 data_filter = ~isnan(grand_table.distance);
-data_filter = grand_table.rh > 145;
+data_filter = data_filter & grand_table.h2 > 4e8;
 
 if (sow_start > 0)
     data_filter = data_filter & grand_table.gps_sow > (sow_start);
@@ -98,7 +103,7 @@ end
 
 tmp_table = grand_table(data_filter, ...
     {'gps_sow', 'angle', 'distance', 'dbm', ...
-    'rx', 'ry', 'rz', 'tx', 'ty', 'tz', 'rh', 'th'});
+    'rx', 'ry', 'rz', 'tx', 'ty', 'tz', 'rh', 'th', 'h2'});
 if size(tmp_table,1) == 0
     disp('No Valid data!');
     return
@@ -106,32 +111,27 @@ end
 
 %% Distance/RSSI vs Time
 if plot_rssi_vs_time
-    figure
-    hold on
+    figure;
+    hold on;
     subplot(2,1,1);
-    scatter(tmp_table.gps_sow, tmp_table.dbm, [], tmp_table.rh);
-    grid on
+    scatter(grand_table.gps_sow, grand_table.dbm, '+');
+    grid on;
     subplot(2,1,2);
-    scatter(tmp_table.gps_sow, tmp_table.distance);
-    grid on
-end
-
-%% Position vs Time
-if plot_position_vs_time
-    figure
-    hold on
-    scatter3(tmp_table.tx, tmp_table.ty, tmp_table.tz, [], tmp_table.gps_sow);
-    scatter3(tmp_table.rx, tmp_table.ry, tmp_table.rz, [], tmp_table.gps_sow);
-    
+    scatter(grand_table.gps_sow, grand_table.distance, [], grand_table.h2, '+');
+    grid on;
 end
 
 %% Values for NS2
-
-rssi_model = path_loss_exponent_modeller(tmp_table.distance, tmp_table.dbm, tmp_table.rh, Pt_, freq_, plot_distance_vs_rssi, log_file);
-if log_file
-fprintf(log_file, 'Phy/WirelessPhy set CSThresh_ %.5e\n', csthresh_);
-fprintf(log_file, 'Phy/WirelessPhy set RXThresh_ %.5e\n', rxthresh_);
+rxthresh_ = 10.^(rxthresh_dbm/10);
+csthresh_ = 10.^(csthresh_dbm/10);
+rssi_model = path_loss_exponent_modeller(tmp_table.distance, tmp_table.dbm, [], tx_pwr_dbm, freq_, plot_distance_vs_rssi, log_file);
+if log_file > 0
+fprintf(log_file, 'Phy/WirelessPhy set CSThresh_ %.5e ;# CS Threshold of %d dBm\n', csthresh_, csthresh_dbm);
+fprintf(log_file, 'Phy/WirelessPhy set RXThresh_ %.5e ;# RX Threshold of %d dBm\n', rxthresh_, rxthresh_dbm);
 fprintf(log_file, '#--------------------------------------\n');
+end
+if run_ns2
+    !python model_test.py;
 end
 %% PRR Processing
 if prr_modelling
@@ -139,5 +139,24 @@ if prr_modelling
     tmp_recv_ber.log_distance = interp1(tmp_table.gps_sow, log10(tmp_table.distance), tmp_recv_ber.gps_sow);
     tmp_recv_ber.dbm = predict(rssi_model, tmp_recv_ber.log_distance);
     all_slices = sow_start:slice_width:sow_end;
-    packet_error_modeller(tmp_recv_ber, xmit_pkt, all_slices, time_delta, [000 1400]);
+    packet_length_range = [000 1400];
+    error_table = packet_error_analyser(recv_pkt, xmit_pkt, all_slices, time_delta, packet_length_range, log_file);
+    error_table.distance = interp1(tmp_table.gps_sow, tmp_table.distance, error_table.gps_sow);
+%     figure; % To determine xmit to recv lag.
+%     hold on;
+%     scatter(recv_pkt.gps_sow, (recv_pkt.dbm./recv_pkt.dbm) * (-40.05));
+%     scatter(xmit_pkt.gps_sow(xmit_pkt.status == 0), xmit_pkt.numtx(xmit_pkt.status == 0)*(-40));
+    sim_table = readtable('sim_output.csv');
+    figure;
+    hold on;
+    scatter(error_table.distance, error_table.prr, 'x');
+    plot(sim_table.distance, sim_table.prr, '-r');
+    legend('Measured PRR', 'Simulated PRR');
+    xlabel('Distance (m)');
+    ylabel('Packet Reception Rate');
+    error_table = error_table(~isnan(error_table.distance),:);
+    error_table.sim_prr = interp1(sim_table.distance, sim_table.prr, error_table.distance);
+    fit_mse = goodnessOfFit(error_table.prr, error_table.sim_prr, 'NRMSE');
+    fprintf(1, '#Simulation Fit RMSE: %.05e\n', fit_mse);
 end
+fclose(log_file);
