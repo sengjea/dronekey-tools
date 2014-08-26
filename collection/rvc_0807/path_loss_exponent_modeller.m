@@ -14,8 +14,8 @@ rx_power_model =  fitnlm(mod_distance_values, dbm_values, rx_power_function, [-9
 
 rx_power_model_xvalues = transpose(linspace(mod_dist0_,max(mod_distance_values)));
 rx_power_model_yvalues = predict(rx_power_model, rx_power_model_xvalues);
-Pr0_dbm  = predict(rx_power_model, mod_dist0_);
-Pr0_ = 10.^(Pr0_dbm./10);
+Pr0_dbm  = predict(rx_power_model, mod_dist0_)
+Pr0_ = 10.^(Pr0_dbm./10)
 lambda_ = 299792458/freq_;
 L_ = (Pt_ / Pr0_) * (lambda_ /(4 * pi * dist0_))^2;
 
