@@ -10,29 +10,13 @@ trasmitter_sync_file = 'xmit_new_sync.csv';
 receiver_positions_file = 'recv_new_pos.csv';
 transmitter_positions_file = 'xmit_new_pos.csv';
 
-<<<<<<< HEAD:collection/rvc_0807/parse_sync.m
-rssi2dbm_func = @(x) x;
-%rssi2dbm_func = @(x) x/3 - 100;
-rssi_ewma_factor = 0; % 0 if no ewma desired
-=======
 rssi2dbm_func = @(x) x/3 - 100;
 rssi_ewma_factor = 3/8; % 0 if no ewma desired
->>>>>>> 75e404c0822f4d7cc48d021990f2a538d33f9841:collection/rvc_0807/parse_with_sim.m
 
 log_file = fopen('matlab.tcl','w');
 plot_rssi_vs_time = 1;
-<<<<<<< HEAD:collection/rvc_0807/parse_sync.m
-plot_position_vs_time = 1;
 plot_distance_vs_rssi = 1;
 plot_stamp_sync = 0;
-prr_modelling = exist('transmitter_rssi_file', 'var');
-
-sow_start = 392540; % 392750;
-sow_end = 392700; % 392950;
-=======
-plot_distance_vs_rssi = 1;
-plot_stamp_sync = 0;
->>>>>>> 75e404c0822f4d7cc48d021990f2a538d33f9841:collection/rvc_0807/parse_with_sim.m
 
 sow_start = 392750;
 sow_end = 392950;
@@ -44,8 +28,6 @@ csthresh_dbm = -100;
 freq_ = (2425 * 10^6); %Frequency for Channel 15
 
 lag = 0;
-
-lag = 223;
 
 slice_width =  3;
 time_delta = 0.2;
@@ -83,14 +65,6 @@ end
 
 %% RSSI processing
 
-
-if rssi_ewma_factor > 0
-    rssi_filter.arg1 = [8, -7];
-    rssi_filter.arg2 = 1;
-    
-    recv_pkt.rssi = filter(rssi_filter.arg1, rssi_filter.arg2, recv_pkt.rssi);
-end
-
 if rssi_ewma_factor > 0
     rssi_filter.arg1 = rssi_ewma_factor;
     rssi_filter.arg2 = [ 1 (rssi_ewma_factor-1) ];
@@ -100,10 +74,7 @@ end
 recv_pkt.dbm = rssi2dbm_func(recv_pkt.rssi);
 
 %% Grand Table
-<<<<<<< HEAD:collection/rvc_0807/parse_sync.m
-=======
 
->>>>>>> 75e404c0822f4d7cc48d021990f2a538d33f9841:collection/rvc_0807/parse_with_sim.m
 grand_table = array2table([recv_pkt.gps_sow + lag, ...
     interp1(recv_pos.gps_sow, recv_pos{:, { 'x', 'y', 'z', 'height' } }, recv_pkt.gps_sow + lag), ...
     interp1(xmit_pos.gps_sow, xmit_pos{:, { 'x', 'y', 'z', 'height' } }, recv_pkt.gps_sow + lag), ...
@@ -119,13 +90,8 @@ grand_table.angle = abs(grand_table.rh - grand_table.th)./grand_table.distance;
 
 grand_table.h2 = grand_table.rh.^2 .* grand_table.th.^2;
 
-<<<<<<< HEAD:collection/rvc_0807/parse_sync.m
-data_filter = ~isnan(grand_table.distance) & grand_table.rh > 130;
-%data_filter = grand_table.rh > 145;
-=======
 data_filter = ~isnan(grand_table.distance);
 data_filter = data_filter & grand_table.h2 > 4e8;
->>>>>>> 75e404c0822f4d7cc48d021990f2a538d33f9841:collection/rvc_0807/parse_with_sim.m
 
 if (sow_start > 0)
     data_filter = data_filter & grand_table.gps_sow > (sow_start);
@@ -143,8 +109,6 @@ if size(tmp_table,1) == 0
     return
 end
 
-
-
 %% Distance/RSSI vs Time
 if plot_rssi_vs_time
     figure;
@@ -158,20 +122,12 @@ if plot_rssi_vs_time
 end
 
 %% Values for NS2
-<<<<<<< HEAD:collection/rvc_0807/parse_sync.m
-
-rssi_model = path_loss_exponent_modeller(tmp_table.distance, tmp_table.dbm, tmp_table.gps_sow, Pt_, freq_, plot_distance_vs_rssi, log_file);
-if log_file
-fprintf(log_file, 'Phy/WirelessPhy set CSThresh_ %.5e\n', csthresh_);
-fprintf(log_file, 'Phy/WirelessPhy set RXThresh_ %.5e\n', rxthresh_);
-=======
 rxthresh_ = 10.^(rxthresh_dbm/10);
 csthresh_ = 10.^(csthresh_dbm/10);
 rssi_model = path_loss_exponent_modeller(tmp_table.distance, tmp_table.dbm, [], tx_pwr_dbm, freq_, plot_distance_vs_rssi, log_file);
 if log_file > 0
 fprintf(log_file, 'Phy/WirelessPhy set CSThresh_ %.5e ;# CS Threshold of %d dBm\n', csthresh_, csthresh_dbm);
 fprintf(log_file, 'Phy/WirelessPhy set RXThresh_ %.5e ;# RX Threshold of %d dBm\n', rxthresh_, rxthresh_dbm);
->>>>>>> 75e404c0822f4d7cc48d021990f2a538d33f9841:collection/rvc_0807/parse_with_sim.m
 fprintf(log_file, '#--------------------------------------\n');
 end
 if run_ns2
