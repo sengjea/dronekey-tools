@@ -1,7 +1,7 @@
 clear all; close all; clc;
 %% Script Options
 
-analyse_wifi = 1;
+analyse_wifi = 0;
 use_asctec = 0;
 
 if analyse_wifi
@@ -50,7 +50,7 @@ freq_ = (2425 * 10^6); %Frequency for Channel 15
 
 slice_width =  2;
 time_delta = 0.1;
-run_ns2 = 1;
+run_ns2 = 0;
 %% Load Transmitter Positions Table
 
 prr_modelling = exist('transmitter_rssi_file', 'var');
@@ -176,6 +176,7 @@ if prr_modelling
     %     scatter(xmit_pkt.gps_sow(xmit_pkt.status == 0), xmit_pkt.numtx(xmit_pkt.status == 0)*(-40));
     
     sim_table = readtable('sim_output.csv');
+    sim_table = sim_table(sim_table.distance < 200,:);
     figure;
     hold on;
     scatter(error_table.distance, error_table.prr, 'x');

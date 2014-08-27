@@ -34,6 +34,7 @@ L_ = (Pt_ / Pr0_) * (lambda_ /(4 * pi * dist0_))^2;
         title('Log distance vs RSSI');
         xlabel('Log distance (log(m))');
         ylabel('RSSI values (dBm)');
+        axis([0.3 1.6 -100 -60]);
     end
 %% Logging Function
     fprintf(1, 'path_loss_function = %s\n',func2str(rx_power_function));
@@ -48,6 +49,7 @@ if log_file > 0
     fprintf(log_file, 'Phy/WirelessPhy set Pt_ %.5e ;# Transmit Power of %d dBm\n', Pt_, Pt_dbm);
     fprintf(log_file, 'Phy/WirelessPhy set freq_ %.5e\n', freq_);
     fprintf(log_file, 'Phy/WirelessPhy set L_ %.5e\n', L_);
+    fprintf(log_file, '#rsquare %.5e\n', rx_power_model.Rsquared.Adjusted);
     fprintf(log_file, '#--------------------------------------\n');
 end
 end
