@@ -21,7 +21,8 @@ L_ = (Pt_ / Pr0_) * (lambda_ /(4 * pi * dist0_))^2;
 
 %% PLot Figure
     if plot_
-        figure;
+        f = figure;
+        set(f,'OuterPosition', [ 100 100 570 380 ]);
         hold on;
         if size(grouping_values) == size(dbm_values)
             scatter(mod_distance_values, dbm_values, [], grouping_values, '+');
@@ -34,7 +35,7 @@ L_ = (Pt_ / Pr0_) * (lambda_ /(4 * pi * dist0_))^2;
         title('Log distance vs RSSI');
         xlabel('Log distance (log(m))');
         ylabel('RSSI values (dBm)');
-        axis([0.3 1.6 -100 -60]);
+        axis([0.3 1.6 -90 -50]);
     end
 %% Logging Function
     fprintf(1, 'path_loss_function = %s\n',func2str(rx_power_function));

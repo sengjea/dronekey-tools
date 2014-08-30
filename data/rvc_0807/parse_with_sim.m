@@ -4,6 +4,8 @@ clear all; close all; clc;
 analyse_wifi = 0;
 use_asctec = 0;
 
+log_file = fopen('ns2/matlab.tcl','w');
+
 if analyse_wifi
     receiver_rssi_file = 'wifi.csv';
     transmitter_rssi_file = 'xmit_wifi.csv';
@@ -16,6 +18,7 @@ if analyse_wifi
     lag = 223;
     rxthresh_dbm = -75;
     csthresh_dbm = -100;
+    fprintf(log_file, '##-----Generated 802.11.g parameters -------\n');
     !python faker.py 0.15
 else
     receiver_rssi_file = 'recv_ber.csv';
@@ -28,6 +31,7 @@ else
     lag = 0;
     rxthresh_dbm = -87;
     csthresh_dbm = -100;
+    fprintf(log_file, '##-----Generated 802.15.4 parameters -------\n');
 end
 
 if use_asctec
@@ -40,8 +44,8 @@ else
     transmitter_positions_file = 'xmit_new_pos.csv';
 end
 
-log_file = fopen('matlab.tcl','w');
-plot_rssi_vs_time = 1;
+
+plot_rssi_vs_time = 0;
 plot_distance_vs_rssi = 1;
 plot_stamp_sync = 0;
 tx_pwr_dbm = 3;
@@ -50,7 +54,7 @@ freq_ = (2425 * 10^6); %Frequency for Channel 15
 
 slice_width =  2;
 time_delta = 0.1;
-run_ns2 = 0;
+run_ns2 = 1;
 %% Load Transmitter Positions Table
 
 prr_modelling = exist('transmitter_rssi_file', 'var');
@@ -159,7 +163,7 @@ if log_file > 0
     fprintf(log_file, '#--------------------------------------\n');
 end
 if run_ns2
-    !python model_test.py;
+    !cd ns2; python model_test.py bootscript.tcl;
 end
 %% PRR Processing
 if prr_modelling
@@ -175,9 +179,10 @@ if prr_modelling
     %     scatter(recv_pkt.gps_sow, (recv_pkt.dbm./recv_pkt.dbm) * (-40.05));
     %     scatter(xmit_pkt.gps_sow(xmit_pkt.status == 0), xmit_pkt.numtx(xmit_pkt.status == 0)*(-40));
     
-    sim_table = readtable('sim_output.csv');
+    sim_table = readtable('ns2/sim_output.csv');
     sim_table = sim_table(sim_table.distance < 200,:);
-    figure;
+    f = figure;
+    set(f,'OuterPosition', [ 100 100 570 380 ]);
     hold on;
     scatter(error_table.distance, error_table.prr, 'x');
     plot(sim_table.distance, sim_table.prr, '-r');
