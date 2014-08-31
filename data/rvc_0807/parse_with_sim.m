@@ -9,7 +9,7 @@ log_file = fopen('ns2/matlab.tcl','w');
 if analyse_wifi
     receiver_rssi_file = 'wifi.csv';
     transmitter_rssi_file = 'xmit_wifi.csv';
-    rssi2dbm_func = @(x) x; %x/3 - 100;
+    rssi2dbm_func = @(x) x; %x/3 - 100; 
     rssi_ewma_factor = 0; % 0 if no ewma desired
     rssi_defilter_numer = 0; % 0 if no ewma defilter needed.
     rssi_defilter_denom = 8;
@@ -44,17 +44,20 @@ else
     transmitter_positions_file = 'xmit_new_pos.csv';
 end
 
-
+%% Plotting Options
 plot_rssi_vs_time = 0;
 plot_distance_vs_rssi = 1;
 plot_stamp_sync = 0;
 tx_pwr_dbm = 3;
 
+%% Parameters
 freq_ = (2425 * 10^6); %Frequency for Channel 15
 
+%% Analysis Options
 slice_width =  2;
 time_delta = 0.1;
 run_ns2 = 1;
+
 %% Load Transmitter Positions Table
 
 prr_modelling = exist('transmitter_rssi_file', 'var');
@@ -105,22 +108,7 @@ if rssi_ewma_factor > 0
 end
 recv_pkt.dbm = rssi2dbm_func(recv_pkt.rssi);
 
-%% Grand Table
-
-grand_table = array2table([recv_pkt.gps_sow, ...
-    interp1(recv_pos.gps_sow, recv_pos{:, { 'x', 'y', 'z', 'height' } }, recv_pkt.gps_sow), ...
-    interp1(xmit_pos.gps_sow, xmit_pos{:, { 'x', 'y', 'z', 'height' } }, recv_pkt.gps_sow), ...
-    recv_pkt.dbm
-    ],...
-    'VariableNames',{ 'gps_sow' 'rx' 'ry' 'rz' 'rh' 'tx' 'ty' 'tz' 'th' 'dbm'});
-
-grand_table.distance = sqrt((grand_table.tx - grand_table.rx).^2 + ...
-    (grand_table.ty - grand_table.ry).^2 + ...
-    (grand_table.tz - grand_table.rz).^2 ...
-    );
-grand_table.angle = abs(grand_table.rh - grand_table.th)./grand_table.distance;
-
-grand_table.h2 = grand_table.rh.^2 .* grand_table.th.^2;
+grand_table = distance_interpolater(recv_pkt, xmit_pos, recv_pos);
 
 data_filter = ~isnan(grand_table.distance);
 data_filter = data_filter & grand_table.h2 > 4e8;
@@ -162,9 +150,12 @@ if log_file > 0
     fprintf(log_file, 'Phy/WirelessPhy set RXThresh_ %.5e ;# RX Threshold of %d dBm\n', rxthresh_, rxthresh_dbm);
     fprintf(log_file, '#--------------------------------------\n');
 end
+
+%% NS2 Simulation
 if run_ns2
-    !cd ns2; python model_test.py bootscript.tcl;
+    unix('cd ns2; python model_test.py bootscript.tcl model_output.csv;');
 end
+
 %% PRR Processing
 if prr_modelling
     tmp_recv_ber = recv_pkt;
@@ -174,10 +165,6 @@ if prr_modelling
     %packet_length_range = [000 1400];
     error_table = packet_error_analyser(recv_pkt, xmit_pkt, all_slices, time_delta);
     error_table.distance = interp1(tmp_table.gps_sow, tmp_table.distance, error_table.gps_sow);
-    %     figure; % To determine xmit to recv lag.
-    %     hold on;
-    %     scatter(recv_pkt.gps_sow, (recv_pkt.dbm./recv_pkt.dbm) * (-40.05));
-    %     scatter(xmit_pkt.gps_sow(xmit_pkt.status == 0), xmit_pkt.numtx(xmit_pkt.status == 0)*(-40));
     
     sim_table = readtable('ns2/sim_output.csv');
     sim_table = sim_table(sim_table.distance < 200,:);
@@ -189,9 +176,10 @@ if prr_modelling
     legend('Measured PRR', 'Simulated PRR');
     xlabel('Distance (m)');
     ylabel('Packet Reception Rate');
+    title('Plot of Packet Reception Rate against Distance');
     error_table = error_table(~isnan(error_table.distance),:);
     error_table.sim_prr = interp1(sim_table.distance, sim_table.prr, error_table.distance);
     fit_mse = goodnessOfFit(error_table.prr, error_table.sim_prr, 'NRMSE');
-    fprintf(1, '#Simulation Fit RMSE: %.05e\n', fit_mse);
+    fprintf(1, '#Simulation Fit NRMSE: %.05e\n', fit_mse);
 end
 fclose(log_file);

@@ -21,7 +21,6 @@ def parse_tr(dtype, out_f, in_flist):
             record = [ int (r) for r in record ]
             if record[0] not in run_data or run_data[record[0]][0] < record[1]:
                 run_data[record[0]] = record[1:]
-        print run_data 
         for k,v in run_data.iteritems():
             if k not in data:
                 data[k] = v
@@ -39,11 +38,15 @@ def parse_com_log(dtype, out_f, in_f):
         of = open(out_f, "w") 
         of.write("id, run, distance, success\n") 
     run = 0 
+    prev_is_new = False
     for line in f:
         if line[0] == '=':
-            run += 1
+            if not prev_is_new: 
+                run += 1
+            prev_is_new = True
             continue
         of.write("{0}, {1}, {2}".format(dtype, run, line))
+        prev_is_new = False
     f.close()
     of.close()
 
