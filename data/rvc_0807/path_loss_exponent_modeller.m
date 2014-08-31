@@ -14,14 +14,15 @@ rx_power_model =  fitnlm(mod_distance_values, dbm_values, rx_power_function, [-9
 
 rx_power_model_xvalues = transpose(linspace(mod_dist0_,max(mod_distance_values)));
 rx_power_model_yvalues = predict(rx_power_model, rx_power_model_xvalues);
-Pr0_dbm  = predict(rx_power_model, mod_dist0_);
-Pr0_ = 10.^(Pr0_dbm./10);
+Pr0_dbm  = predict(rx_power_model, mod_dist0_)
+Pr0_ = 10.^(Pr0_dbm./10)
 lambda_ = 299792458/freq_;
 L_ = (Pt_ / Pr0_) * (lambda_ /(4 * pi * dist0_))^2;
 
 %% PLot Figure
     if plot_
-        figure;
+        f = figure;
+        set(f,'OuterPosition', [ 100 100 570 380 ]);
         hold on;
         if size(grouping_values) == size(dbm_values)
             scatter(mod_distance_values, dbm_values, [], grouping_values, '+');
@@ -34,6 +35,7 @@ L_ = (Pt_ / Pr0_) * (lambda_ /(4 * pi * dist0_))^2;
         title('Log distance vs RSSI');
         xlabel('Log distance (log(m))');
         ylabel('RSSI values (dBm)');
+        axis([0.3 1.6 -90 -50]);
     end
 %% Logging Function
     fprintf(1, 'path_loss_function = %s\n',func2str(rx_power_function));
@@ -48,6 +50,7 @@ if log_file > 0
     fprintf(log_file, 'Phy/WirelessPhy set Pt_ %.5e ;# Transmit Power of %d dBm\n', Pt_, Pt_dbm);
     fprintf(log_file, 'Phy/WirelessPhy set freq_ %.5e\n', freq_);
     fprintf(log_file, 'Phy/WirelessPhy set L_ %.5e\n', L_);
+    fprintf(log_file, '#rsquare %.5e\n', rx_power_model.Rsquared.Adjusted);
     fprintf(log_file, '#--------------------------------------\n');
 end
 end
