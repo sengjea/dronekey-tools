@@ -26,7 +26,7 @@ else
     rssi2dbm_func = @(x) x/3 - 100;
     rssi_ewma_factor = 3/8;
     rssi_defilter_numer = 0;
-    sow_start = 392750;
+    sow_start = 392550;
     sow_end = 392950;
     lag = 0;
     rxthresh_dbm = -87;
@@ -153,6 +153,7 @@ end
 
 %% NS2 Simulation
 if run_ns2
+    unix('cd ns2; python model_test.py bootscript_udisk.tcl udisk_output.csv;');
     unix('cd ns2; python model_test.py bootscript.tcl model_output.csv;');
 end
 
@@ -166,20 +167,35 @@ if prr_modelling
     error_table = packet_error_analyser(recv_pkt, xmit_pkt, all_slices, time_delta);
     error_table.distance = interp1(tmp_table.gps_sow, tmp_table.distance, error_table.gps_sow);
     
-    sim_table = readtable('ns2/sim_output.csv');
-    sim_table = sim_table(sim_table.distance < 200,:);
+
     f = figure;
     set(f,'OuterPosition', [ 100 100 570 380 ]);
     hold on;
     scatter(error_table.distance, error_table.prr, 'x');
+    
+    sim_table = readtable('ns2/model_output.csv');
+    udisk_table = readtable('ns2/udisk_output.csv');
+    sim_table = sim_table(sim_table.distance < 200,:);
     plot(sim_table.distance, sim_table.prr, '-r');
-    legend('Measured PRR', 'Simulated PRR');
+    plot(udisk_table.distance, udisk_table.prr, '-g');
+    error_table = error_table(~isnan(error_table.distance),:);
+    error_table.sim_prr = interp1(sim_table.distance, sim_table.prr, error_table.distance);
+    error_table.udisk_prr = interp1(udisk_table.distance, udisk_table.prr, error_table.distance);
+    fit_mse = goodnessOfFit(error_table.prr, error_table.sim_prr, 'MSE');
+    fprintf(1, '#Model MSE: %.05e\n', fit_mse);
+    fit_mse = goodnessOfFit(error_table.prr, error_table.udisk_prr, 'MSE');
+    fprintf(1, '#UDISK MSE: %.05e\n', fit_mse);
+    legend('Measured PRR', 'Simulated PRR (Log Shadow Model)', 'Simulated PRR (Unit Disk of 10.7m)');
     xlabel('Distance (m)');
     ylabel('Packet Reception Rate');
     title('Plot of Packet Reception Rate against Distance');
-    error_table = error_table(~isnan(error_table.distance),:);
-    error_table.sim_prr = interp1(sim_table.distance, sim_table.prr, error_table.distance);
-    fit_mse = goodnessOfFit(error_table.prr, error_table.sim_prr, 'NRMSE');
-    fprintf(1, '#Simulation Fit NRMSE: %.05e\n', fit_mse);
+    
+    f = figure;
+    set(f,'OuterPosition', [ 100 100 570 380 ]);
+    hold on;
+    scatter(error_table.distance, error_table.ber);    
+    xlabel('Distance (m)');
+    ylabel('Bit Error Rate');
+    title('Plot of Bit Error Rate against Distance');
 end
 fclose(log_file);

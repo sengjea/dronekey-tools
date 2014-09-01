@@ -19,8 +19,7 @@ def parse_tr(dtype, out_f, in_flist):
             if record[0] == 'run':
                 continue
             record = [ int (r) for r in record ]
-            if record[0] not in run_data or run_data[record[0]][0] < record[1]:
-                run_data[record[0]] = record[1:]
+            run_data[record[0]] = record[1:]
         for k,v in run_data.iteritems():
             if k not in data:
                 data[k] = v
